@@ -87,6 +87,9 @@ class Parser:
         molecule_atoms_id.sort()
         molecule_atoms.sort()
 
+        # transform link before launching isomorphism algorithm
+        atoms_transformed, links_transformed = self.transform_links(molecule_atoms_id, molecule_links)
+
         # create molecule dictionary
         return {
             'ID': molecule_id,
@@ -100,7 +103,11 @@ class Parser:
             'ATOMS_ID': molecule_atoms_id,
             'LINKS': molecule_links,
             'FAMILY': molecule_family,
-            'MAXIMUM_LINK': molecule_maximum_link
+            'MAXIMUM_LINK': molecule_maximum_link,
+            'ATOMS_NUMBER_TRANSFORMED': len(atoms_transformed),
+            'LINKS_NUMBER_TRANSFORMED': len(links_transformed),
+            'ATOMS_TRANSFORMED': atoms_transformed,
+            'LINKS_TRANSFORMED': links_transformed
         }
 
     # parse structure & get molecule atoms and links
@@ -369,6 +376,44 @@ class Parser:
                 visited_nodes.append(node)
         return False
 
+    # link coloring step : transform links (replace 2-link & 3-link with new atoms 'XXX')
+    @staticmethod
+    def transform_links(molecule_atoms_id, molecule_links):
+
+        # create new temporary atoms & links lists
+        temp_atoms = [(atom_name, atom_id, '0') for atom_name, atom_id in molecule_atoms_id]
+        temp_links = [(link_from, link_to, '0') for link_from, link_to, _ in molecule_links]
+
+        # link coloring for 2-link & 3-link
+        atom_id = len(molecule_atoms_id)
+        for link in molecule_links:
+            link_from, link_to, link_type = link
+
+            # if link = double link 'link-2'
+            if link_type == '2':
+                # add one new atom 'XXX'
+                temp_atoms.append(('XXX', atom_id, '1'))
+                # add link from-XXX-to
+                temp_links.append((link_from, atom_id, '1'))
+                temp_links.append((link_to, atom_id, '1'))
+                atom_id += 1
+
+            # if link = triple link 'link-3'
+            if link_type == '3':
+                # add first new atoms 'XXX' with its links
+                temp_atoms.append(('XXX', atom_id, '1'))
+                temp_links.append((link_from, atom_id, '1'))
+                temp_links.append((link_to, atom_id, '1'))
+                atom_id += 1
+
+                # add second new atom 'XXX' with its links
+                temp_atoms.append(('XXX', atom_id, '1'))
+                temp_links.append((link_from, atom_id, '1'))
+                temp_links.append((link_to, atom_id, '1'))
+                atom_id += 1
+
+        return temp_atoms, temp_links
+
     @staticmethod
     def display_molecule(molecule_dictionary):
         print('---------------------------------------------------------------------')
@@ -383,6 +428,11 @@ class Parser:
         print('ATOMS : ', molecule_dictionary['ATOMS'])
         print('ATOMS_ID : ', molecule_dictionary['ATOMS_ID'])
         print('LINKS : ', molecule_dictionary['LINKS'])
+        print('MAXIMUM_LINK_TYPE : ', molecule_dictionary['MAXIMUM_LINK'])
+        print('ATOMS_NUMBER_TRANSFORMED : ', molecule_dictionary['ATOMS_NUMBER_TRANSFORMED'])
+        print('LINKS_NUMBER_TRANSFORMED : ', molecule_dictionary['LINKS_NUMBER_TRANSFORMED'])
+        print('ATOMS_TRANSFORMED : ', molecule_dictionary['ATOMS_TRANSFORMED'])
+        print('LINKS_TRANSFORMED : ', molecule_dictionary['LINKS_TRANSFORMED'])
         print('---------------------------------------------------------------------')
 
 
