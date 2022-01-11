@@ -88,7 +88,10 @@ class Parser:
         molecule_atoms.sort()
 
         # transform link before launching isomorphism algorithm
-        atoms_transformed, links_transformed = self.transform_links(molecule_atoms_id, molecule_links)
+        molecule_atoms_transformed, molecule_links_transformed = self.transform_links(molecule_atoms_id, molecule_links)
+
+        # get PTN & LAB array of molecule
+        molecule_lab, molecule_ptn = self.construct_lab_ptn(molecule_atoms_transformed)
 
         # create molecule dictionary
         return {
@@ -104,10 +107,12 @@ class Parser:
             'LINKS': molecule_links,
             'FAMILY': molecule_family,
             'MAXIMUM_LINK': molecule_maximum_link,
-            'ATOMS_NUMBER_TRANSFORMED': len(atoms_transformed),
-            'LINKS_NUMBER_TRANSFORMED': len(links_transformed),
-            'ATOMS_TRANSFORMED': atoms_transformed,
-            'LINKS_TRANSFORMED': links_transformed
+            'ATOMS_NUMBER_TRANSFORMED': len(molecule_atoms_transformed),
+            'LINKS_NUMBER_TRANSFORMED': len(molecule_links_transformed),
+            'ATOMS_TRANSFORMED': molecule_atoms_transformed,
+            'LINKS_TRANSFORMED': molecule_links_transformed,
+            'LAB': molecule_lab,
+            'PTN': molecule_ptn
         }
 
     # parse structure & get molecule atoms and links
@@ -414,6 +419,37 @@ class Parser:
 
         return temp_atoms, temp_links
 
+    # construct LAB & PTN arrays for isomorphism algorithm ('Nauty MCKAY')
+    @staticmethod
+    def construct_lab_ptn(molecule_atoms):
+        # sorting molecule atoms list & initialize temporary lists
+        molecule_atoms.sort()
+        ptn = []
+
+        # construct Lab & lab_mol arrays
+        lab = [atom_id for _, atom_id, _ in molecule_atoms]
+        lab_mol = [atom_name for atom_name, _, _ in molecule_atoms]
+
+        # construct PTN array
+        i = 1
+        while i < len(lab_mol):
+            if lab_mol[i - 1] == lab_mol[i]:
+                ptn.append(1)
+            else:
+                ptn.append(0)
+            i += 1
+        ptn.append(0)
+
+        # transform LAB array to string & separate atoms IDs with '-'
+        temp = [str(elem) for elem in lab]
+        converted_lab = '-'.join(temp)
+
+        # transform PTN array to string
+        temp = [str(elem) for elem in ptn]
+        converted_ptn = ''.join(temp)
+
+        return converted_lab, converted_ptn
+
     @staticmethod
     def display_molecule(molecule_dictionary):
         print('---------------------------------------------------------------------')
@@ -433,6 +469,8 @@ class Parser:
         print('LINKS_NUMBER_TRANSFORMED : ', molecule_dictionary['LINKS_NUMBER_TRANSFORMED'])
         print('ATOMS_TRANSFORMED : ', molecule_dictionary['ATOMS_TRANSFORMED'])
         print('LINKS_TRANSFORMED : ', molecule_dictionary['LINKS_TRANSFORMED'])
+        print('LAB : ', molecule_dictionary['LAB'])
+        print('PTN : ', molecule_dictionary['PTN'])
         print('---------------------------------------------------------------------')
 
 
