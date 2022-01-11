@@ -1,5 +1,3 @@
-from molecule import *
-
 
 class Parser:
 
@@ -35,9 +33,3 @@ class Parser:
                 continue
         if self.debug_level >= 5:
             print(self.molecules_ID)
-
-
-if __name__ == '__main__':
-    parser = Parser()
-    molecule = Molecule(id='CHEBI:90')
-    molecule.display()
