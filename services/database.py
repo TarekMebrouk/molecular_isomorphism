@@ -1,5 +1,5 @@
 import mysql.connector
-from models.molecule import *
+import models.molecule
 
 
 class Database:
@@ -19,9 +19,6 @@ class Database:
         # 1- save molecule information
         self.save_molecule_information(molecule)
 
-        # 2- save molecule atoms
-        self.save_atoms(molecule)
-
         # 3- save molecule links
         self.save_links(molecule)
 
@@ -33,35 +30,47 @@ class Database:
     # save molecule information
     def save_molecule_information(self, molecule):
         cursor = self.connexion.cursor()
-        statement = "INSERT INTO `molecules`(`id_chebi`, `name`, `formula`, `dimension`, " \
-                    "`family`, `atoms_number`, `links_number`, `maximum_link`, " \
-                    "`transformed_atoms_number`, `transformed_links_number`, `canonical_form1`, " \
-                    "`canonical_form2`, `canonical_form3`, `canonical_form4`) VALUES (" \
+        statement = "INSERT INTO `molecules`(`id_chebi`, `name`, `formula`, `dimension`, `family`, `maximum_link`, " \
+                    "`atoms_number`, `links_number`, `atoms`, `links`, `colored_atoms_number`, `colored_links_number`, " \
+                    "`atoms_colored`, `links_colored`, `canonical_form1`, `canonical_form2`, `canonical_form3`) VALUES (" \
                     f" '{molecule.id}', '{molecule.name}', '{molecule.formula}'," \
-                    f" '{molecule.dimension}', '{molecule.family}', {molecule.atoms_number}," \
-                    f" {molecule.links_number}, {molecule.maximum_link}," \
-                    f" {molecule.atoms_transformed_number}, {molecule.links_transformed_number}," \
-                    f" NULL, NULL, NULL, NULL)"
+                    f" '{molecule.dimension}', '{molecule.family}', {molecule.maximum_link}," \
+                    f" {molecule.atoms_number}, {molecule.links_number}, '{self.str_list(molecule.atoms_id)}', '{self.str_list(molecule.links)}'," \
+                    f" {molecule.atoms_colored_number}, {molecule.links_colored_number}," \
+                    f" '{self.str_list(molecule.atoms_colored)}', '{self.str_list(molecule.links_colored)}'," \
+                    f" NULL, NULL, NULL)"
         cursor.execute(statement)
         self.connexion.commit()
 
-    # save molecule atoms to database
-    def save_atoms(self, molecule):
-        cursor = self.connexion.cursor()
-        for atom in molecule.atoms_transformed:
-            atom_name, atom_id, type_c = atom
-            statement = "INSERT INTO `atoms`(`id`, `id_chebi`, `atom_name`, `atom_id`, `ctype`) VALUES (" \
-                        f"NULL, '{molecule.id}', '{atom_name}', {atom_id}, {type_c})"
-            cursor.execute(statement)
-            self.connexion.commit()
+    # transform list [('C', 0, 1), ...] to string (for fetching data into database)
+    @staticmethod
+    def str_list(list):
+        converted_list = ''
+        for line in list:
+            for i in range(len(line)):
+                converted_list += f'{line[i]}'
+                if i == len(line) - 1:
+                    converted_list += '|'
+                else:
+                    converted_list += ','
+        return converted_list
 
     # save molecule links to database
     def save_links(self, molecule):
         cursor = self.connexion.cursor()
-        for link in molecule.links_transformed:
-            atom_from, atom_to, type_c = link
-            statement = "INSERT INTO `links`(`id`, `id_chebi`, `atom_from`, `atom_to`, `ctype`) VALUES (" \
-                        f"NULL, '{molecule.id}', {atom_from}, {atom_to}, {type_c})"
+        # save first version links (without colored links)
+        for link in molecule.links:
+            atom_from, atom_to, _ = link
+            statement = "INSERT INTO `links`(`id`, `id_chebi`, `atom_from`, `atom_to`, `version`) VALUES (" \
+                        f"NULL, '{molecule.id}', {atom_from}, {atom_to}, 0)"
+            cursor.execute(statement)
+            self.connexion.commit()
+
+        # save second version links (colored links)
+        for link in molecule.links_colored:
+            atom_from, atom_to, _ = link
+            statement = "INSERT INTO `links`(`id`, `id_chebi`, `atom_from`, `atom_to`, `version`) VALUES (" \
+                        f"NULL, '{molecule.id}', {atom_from}, {atom_to}, 1)"
             cursor.execute(statement)
             self.connexion.commit()
 
@@ -70,12 +79,22 @@ class Database:
         cursor = self.connexion.cursor()
 
         # save lab array
-        statement = f"INSERT INTO `lab`(`id`, `id_chebi`, `lab`) VALUES (NULL, '{molecule.id}', '{molecule.lab}')"
+        index = 0
+        for lab_item in molecule.lab:
+            ctype = [ctype for atom_name, atom_id, ctype in molecule.atoms_colored if atom_id == lab_item][0]
+            statement = f"INSERT INTO `lab`(`id`, `id_chebi`, `atom_id`, `index`, `ctype`) VALUES (" \
+                        f"NULL, '{molecule.id}', {lab_item}, {index}, '{ctype}')"
+            cursor.execute(statement)
+            self.connexion.commit()
+            index += 1
+
+        # save ptn for colored atoms - version = 0
+        statement = f"INSERT INTO `ptn`(`id`, `id_chebi`, `ptn`, `version`) VALUES (NULL, '{molecule.id}', '{molecule.ptn_atoms_colored}', 0)"
         cursor.execute(statement)
         self.connexion.commit()
 
-        # save ptn array
-        statement = f"INSERT INTO `ptn`(`id`, `id_chebi`, `ptn`) VALUES (NULL, '{molecule.id}', '{molecule.ptn}')"
+        # save ptn for colored links - version = 1
+        statement = f"INSERT INTO `ptn`(`id`, `id_chebi`, `ptn`, `version`) VALUES (NULL, '{molecule.id}', '{molecule.ptn_links_colored}', 1)"
         cursor.execute(statement)
         self.connexion.commit()
 
@@ -83,7 +102,6 @@ class Database:
     def clear_tables(self):
         cursor = self.connexion.cursor()
         cursor.execute("TRUNCATE TABLE molecules")
-        cursor.execute("TRUNCATE TABLE atoms")
         cursor.execute("TRUNCATE TABLE links")
         cursor.execute("TRUNCATE TABLE lab")
         cursor.execute("TRUNCATE TABLE ptn")
