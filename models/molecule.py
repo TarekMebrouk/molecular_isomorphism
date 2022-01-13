@@ -32,13 +32,13 @@ class Molecule:
         if not self.composed:
             self.atoms_id, self.links = self.get_structure()
 
-        # init number of atoms & links
-        self.atoms_number = len(self.atoms_id)
-        self.links_number = len(self.links)
-
         # delete all 'H' atoms from atoms & links lists
         if not self.composed:
             self.atoms_id, self.links = self.delete_H_from_molecule()
+
+        # init number of atoms & links
+        self.atoms_number = len(self.atoms_id)
+        self.links_number = len(self.links)
 
         # get molecule 'atoms' used
         self.atoms = []
@@ -60,14 +60,16 @@ class Molecule:
         self.atoms.sort()
 
         # transform link before launching isomorphism algorithm
-        self.atoms_transformed, self.links_transformed = self.transform_links()
+        self.atoms_colored, self.links_colored = self.transform_links_colored()
 
         # init number of atoms & links
-        self.atoms_transformed_number = len(self.atoms_transformed)
-        self.links_transformed_number = len(self.links_transformed)
+        self.atoms_colored_number = len(self.atoms_colored)
+        self.links_colored_number = len(self.links_colored)
 
         # get PTN & LAB array of molecule
-        self.lab, self.ptn = self.construct_lab_ptn()
+        self.lab = self.construct_lab()
+        self.ptn_atoms_colored = self.construct_ptn_atoms_colored()
+        self.ptn_links_colored = self.construct_ptn_links_colored()
 
     # parse structure & get molecule atoms and links
     def get_structure(self):
@@ -329,8 +331,8 @@ class Molecule:
                 visited_nodes.append(node)
         return False
 
-    # link coloring step : transform links (replace 2-link & 3-link with new atoms 'XXX')
-    def transform_links(self):
+    # link coloring step : transform links (replace 2-link & 3-link with new atoms 'ZZZ')
+    def transform_links_colored(self):
 
         # create new temporary atoms & links lists
         temp_atoms = [(atom_name, atom_id, '0') for atom_name, atom_id in self.atoms_id]
@@ -343,38 +345,71 @@ class Molecule:
 
             # if link = double link 'link-2'
             if link_type == '2':
-                # add one new atom 'XXX'
-                temp_atoms.append(('XXX', atom_id, '1'))
-                # add link from-XXX-to
+                # add one new atom 'ZZZ'
+                temp_atoms.append(('ZZZ', atom_id, '1'))
+                # add link from-ZZZ-to
                 temp_links.append((link_from, atom_id, '1'))
                 temp_links.append((link_to, atom_id, '1'))
                 atom_id += 1
 
             # if link = triple link 'link-3'
             if link_type == '3':
-                # add first new atoms 'XXX' with its links
-                temp_atoms.append(('XXX', atom_id, '1'))
+                # add first new atoms 'ZZZ' with its links
+                temp_atoms.append(('ZZZ', atom_id, '1'))
                 temp_links.append((link_from, atom_id, '1'))
-                temp_links.append((link_to, atom_id, '1'))
+                last_atom_id = atom_id
                 atom_id += 1
 
-                # add second new atom 'XXX' with its links
-                temp_atoms.append(('XXX', atom_id, '1'))
-                temp_links.append((link_from, atom_id, '1'))
-                temp_links.append((link_to, atom_id, '1'))
+                # add second new atom 'ZZZ' with its links
+                temp_atoms.append(('ZZZ', atom_id, '1'))
+                temp_links.append((last_atom_id, atom_id, '1'))
+                temp_links.append((atom_id, link_to, '1'))
                 atom_id += 1
 
         return temp_atoms, temp_links
 
-    # construct LAB & PTN arrays for isomorphism algorithm ('Nauty MCKAY')
-    def construct_lab_ptn(self):
+    # construct LAB
+    def construct_lab(self):
         # sorting molecule atoms list & initialize temporary lists
-        self.atoms_transformed.sort()
+        self.atoms_colored.sort()
+
+        # construct Lab
+        return [atom_id for _, atom_id, _ in self.atoms_colored]
+
+    # construct PTN with 'ZZZ' (links colored) - arrays for isomorphism algorithm ('Nauty MCKAY')
+    def construct_ptn_links_colored(self):
+        # sorting molecule atoms list & initialize temporary lists
+        self.atoms_colored.sort()
         ptn = []
 
-        # construct Lab & lab_mol arrays
-        lab = [atom_id for _, atom_id, _ in self.atoms_transformed]
-        lab_mol = [atom_name for atom_name, _, _ in self.atoms_transformed]
+        # construct lab_mol arrays
+        lab_mol = [atom_name for atom_name, _, _ in self.atoms_colored]
+
+        # construct PTN array
+        toggle = True
+        for i in range(1, len(lab_mol)):
+            if lab_mol[i] == 'ZZZ' and toggle:
+                ptn.append(0)
+                toggle = False
+            else:
+                ptn.append(1)
+        ptn.append(0)
+
+        # transform PTN array to string
+        temp = [str(elem) for elem in ptn]
+        converted_ptn = ''.join(temp)
+
+        return converted_ptn
+
+    # construct PTN without 'ZZZ' (atoms coloration) - arrays for isomorphism algorithm ('Nauty MCKAY')
+    def construct_ptn_atoms_colored(self):
+
+        # sorting molecule atoms list & initialize temporary lists
+        self.atoms_colored.sort()
+        ptn = []
+
+        # construct lab_mol arrays
+        lab_mol = [atom_name for atom_name, _, _ in self.atoms_colored]
 
         # construct PTN array
         i = 1
@@ -386,15 +421,11 @@ class Molecule:
             i += 1
         ptn.append(0)
 
-        # transform LAB array to string & separate atoms IDs with '-'
-        temp = [str(elem) for elem in lab]
-        converted_lab = '-'.join(temp)
-
         # transform PTN array to string
         temp = [str(elem) for elem in ptn]
         converted_ptn = ''.join(temp)
 
-        return converted_lab, converted_ptn
+        return converted_ptn
 
     # display molecule
     def display(self):
@@ -411,10 +442,11 @@ class Molecule:
         print('ATOMS_ID : ', self.atoms_id)
         print('LINKS : ', self.links)
         print('MAXIMUM_LINK_TYPE : ', self.maximum_link)
-        print('ATOMS_NUMBER_TRANSFORMED : ', self.atoms_transformed_number)
-        print('LINKS_NUMBER_TRANSFORMED : ', self.links_transformed_number)
-        print('ATOMS_TRANSFORMED : ', self.atoms_transformed)
-        print('LINKS_TRANSFORMED : ', self.links_transformed)
+        print('ATOMS_NUMBER_TRANSFORMED : ', self.atoms_colored_number)
+        print('LINKS_NUMBER_TRANSFORMED : ', self.links_colored_number)
+        print('ATOMS_TRANSFORMED : ', self.atoms_colored)
+        print('LINKS_TRANSFORMED : ', self.links_colored)
         print('LAB : ', self.lab)
-        print('PTN : ', self.ptn)
+        print('COLORED_ATOMS_PTN : ', self.ptn_atoms_colored)
+        print('COLORED_LINKS_PTN : ', self.ptn_links_colored)
         print('---------------------------------------------------------------------')
