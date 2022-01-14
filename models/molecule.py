@@ -4,7 +4,6 @@ from bioservices import ChEBI
 
 
 class Molecule:
-
     # initialize bio service library
     service_library = ChEBI()
 
@@ -116,7 +115,10 @@ class Molecule:
 
     # get maximum link type inside molecules links (detect multiple & triple links)
     def get_max_link_type(self):
-        return max([int(type) for _, _, type in self.links])
+        if len(self.links) >=1:
+            return max([int(type) for _, _, type in self.links])
+        else:
+            return 0
 
     # delete all 'H' atoms from molecule (to speed up isomorphism detection algorithm)
     def delete_H_from_molecule(self):
@@ -133,14 +135,18 @@ class Molecule:
                 delete_atoms.append(i)
 
         # delete atoms
-        for x in delete_atoms:
-            self.atoms_id = self.atoms_id[:x] + self.atoms_id[x+1:]
+        new_atoms = []
+        for i in range(0, len(self.atoms_id)):
+            if i not in delete_atoms:
+                new_atoms.append(self.atoms_id[i])
 
         # delete links
-        for y in delete_links:
-            self.links = self.links[:y] + self.links[y+1:]
+        new_links = []
+        for i in range(0, len(self.links)):
+            if i not in delete_links:
+                new_links.append(self.links[i])
 
-        return self.atoms_id, self.links
+        return new_atoms, new_links
 
     # get & classify molecule family
     def get_family(self):
@@ -235,11 +241,13 @@ class Molecule:
                             if any(element for element in [link[1] == 'N' for link in links_dictionary[atom_id]]):
                                 classification[0] = True
                             # check if R-C-OH , family = 'Carboxylic acid'
-                            if any(element for element in [link[1] == 'O' and link[2] == 1 for link in links_dictionary[atom_id]]):
+                            if any(element for element in
+                                   [link[1] == 'O' and link[2] == 1 for link in links_dictionary[atom_id]]):
                                 classification[3] = True
 
                                 # check if R-C-O-R , family = 'Ester'
-                                temp = [link[0] for link in links_dictionary[atom_id] if link[1] == 'O' and link[2] == 1]
+                                temp = [link[0] for link in links_dictionary[atom_id] if
+                                        link[1] == 'O' and link[2] == 1]
                                 if any(len(links_dictionary[atom_linked]) > 1 for atom_linked in temp):
                                     classification[2] = True
                             # check if C-C-C , Family = 'Ketone'
@@ -257,7 +265,7 @@ class Molecule:
                 return families[i]
 
         # if any family is selected return 'Other'
-        return families[-1]
+        return families[11]
 
     # create molecule dictionary {'atom_id' : ['neighbor1_id', 'neighbor2_id', ...], ... }
     def get_links_dictionary(self):
