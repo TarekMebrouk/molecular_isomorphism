@@ -75,41 +75,25 @@ class Molecule:
 
         # get molecule structure (transition matrix between atoms)
         buffer = self.molecule_entity.ChemicalStructures[0]['structure'].splitlines()
-        molecule_structure = []
-        for i in buffer:
-            molecule_structure.append(i.split())
-
-        # get encoding type of molecule (by default 'marven')
-        molecule_encoding_type = molecule_structure[1][0]
-
-        # check if encoding type of molecule equals to 'Marvin'
-        encoder_list = {'Marvin': (16, 7)}
-        if molecule_encoding_type not in encoder_list:
-            print('Error:: missing Marven inside molecule encoding type')
-            return None
-
-        # get dimensions of atoms & links list
-        dim_atoms = encoder_list[molecule_encoding_type][0]
-        dim_links = encoder_list[molecule_encoding_type][1]
+        molecule_structure = [i.split() for i in buffer]
 
         # extract atoms & links from molecule structure 'Marven'
-        a_ch, l_ch, atom_id = 0, 0, 0
+        atom_id = 0
         atoms, links = [], []
 
         for line in molecule_structure:
-            if len(line) == dim_atoms and l_ch == 0:
-                a_ch = 1
-                atoms.append((line[3], atom_id))  # add new atom
+            # check if len(line) >= 12 = atoms
+            if len(line) >= 12:
                 atom_id += 1
-                continue
+                atoms.append((line[3], atom_id))  # add new atom
 
-            if len(line) == dim_links and a_ch == 1:
-                l_ch = 1
-                links.append((int(line[0]) - 1, int(line[1]) - 1, line[2]))  # add new link
-                continue
+            # check if len(line) < 12 & line contains only digit
+            elif 12 > len(line) >= 4 and ''.join([str(elem) for elem in line]).isdigit():
 
-            if len(line) != dim_links and l_ch == 1:
-                break
+                # check if line[0] and line[1] are available ID (inside atoms list)
+                exists = lambda id: len([x for _, x in atoms if x == id]) > 0
+                if exists(int(line[0])) and exists(int(line[1])):
+                    links.append((int(line[0]), int(line[1]), line[2]))  # add new link
 
         return atoms, links
 
@@ -316,7 +300,8 @@ class Molecule:
         # make in-depth course (DFS) for constructing graph & detecting cycles
         visited_nodes = []
         current_nodes = queue.Queue()
-        current_nodes.put(self.atoms_id[0][1])
+        if len(self.atoms_id) > 0:
+            current_nodes.put(self.atoms_id[0][1])
 
         while not current_nodes.empty():
             node = current_nodes.get()
@@ -347,32 +332,36 @@ class Molecule:
         temp_links = [(link_from, link_to, '0') for link_from, link_to, _ in self.links]
 
         # link coloring for 2-link & 3-link
-        atom_id = len(self.atoms_id)
+        if len(self.atoms_id) > 0:
+            atom_id = max([id for _, id in self.atoms_id])
+        else:
+            atom_id = len(self.atoms_id)
+
         for link in self.links:
             link_from, link_to, link_type = link
 
             # if link = double link 'link-2'
             if link_type == '2':
                 # add one new atom 'ZZZ'
+                atom_id += 1
                 temp_atoms.append(('ZZZ', atom_id, '1'))
                 # add link from-ZZZ-to
                 temp_links.append((link_from, atom_id, '1'))
                 temp_links.append((link_to, atom_id, '1'))
-                atom_id += 1
 
             # if link = triple link 'link-3'
             if link_type == '3':
                 # add first new atoms 'ZZZ' with its links
+                atom_id += 1
                 temp_atoms.append(('ZZZ', atom_id, '1'))
                 temp_links.append((link_from, atom_id, '1'))
                 last_atom_id = atom_id
-                atom_id += 1
 
                 # add second new atom 'ZZZ' with its links
+                atom_id += 1
                 temp_atoms.append(('ZZZ', atom_id, '1'))
                 temp_links.append((last_atom_id, atom_id, '1'))
                 temp_links.append((atom_id, link_to, '1'))
-                atom_id += 1
 
         return temp_atoms, temp_links
 
