@@ -107,3 +107,11 @@ class Database:
         cursor.execute("TRUNCATE TABLE lab")
         cursor.execute("TRUNCATE TABLE ptn")
         self.connexion.commit()
+
+    # delete one molecule by ID
+    def delete_molecule(self, molecule_id):
+        cursor = self.connexion.cursor()
+        statement = f"DELETE FROM `molecules` WHERE id_chebi = '{molecule_id}'"
+        cursor.execute(statement)
+        self.connexion.commit()
+        print(f"Molecule '{molecule_id}' deleted successfully")
