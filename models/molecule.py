@@ -53,12 +53,12 @@ class Molecule:
         self.maximum_link = args[5]
         self.atoms_number = args[6]
         self.links_number = args[7]
-        self.atoms_id = args[8]
-        self.links = args[9]
+        self.atoms_id = self.convert_atoms_list(args[8])
+        self.links = self.convert_links_list(args[9])
         self.atoms_colored_number = args[10]
         self.links_colored_number = args[11]
-        self.atoms_colored = args[12]
-        self.links_colored = args[13]
+        self.atoms_colored = self.convert_colored_atoms_list(args[12])
+        self.links_colored = self.convert_links_list(args[13])
         self.canonical_form1 = args[14]
         self.canonical_form2 = args[15]
         self.canonical_form3 = args[16]
@@ -484,6 +484,36 @@ class Molecule:
         converted_ptn = ''.join(temp)
 
         return converted_ptn
+
+    # convert SQL TEXT to atoms_id list
+    @staticmethod
+    def convert_links_list(data):
+        links = []
+        list = data[:-1].split('|')
+        for atom in list:
+            args = atom.split(',')
+            links.append((int(args[0]), int(args[1]), args[2]))
+        return links
+
+    # convert SQL TEXT to links list
+    @staticmethod
+    def convert_atoms_list(data):
+        atoms = []
+        list = data[:-1].split('|')
+        for atom in list:
+            args = atom.split(',')
+            atoms.append((args[0], int(args[1])))
+        return atoms
+
+    # convert SQL TEXT to colored_atoms list
+    @staticmethod
+    def convert_colored_atoms_list(data):
+        links = []
+        list = data[:-1].split('|')
+        for atom in list:
+            args = atom.split(',')
+            links.append((args[0], int(args[1]), args[2]))
+        return links
 
     # display molecule
     def display(self):
