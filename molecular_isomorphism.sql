@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le :  ven. 14 jan. 2022 à 21:37
+-- Généré le :  mar. 18 jan. 2022 à 14:05
 -- Version du serveur :  5.7.24
 -- Version de PHP :  7.2.14
 
@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS `lab` (
   `atom_id` int(11) NOT NULL,
   `index` int(11) NOT NULL,
   `ctype` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `SECONDARY_KEY_2` (`id_chebi`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -51,7 +52,8 @@ CREATE TABLE IF NOT EXISTS `links` (
   `atom_from` int(11) NOT NULL,
   `atom_to` int(11) NOT NULL,
   `version` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `SECONDARY_KEY_1` (`id_chebi`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- --------------------------------------------------------
@@ -97,8 +99,31 @@ CREATE TABLE IF NOT EXISTS `ptn` (
   `id_chebi` varchar(50) NOT NULL,
   `ptn` text NOT NULL,
   `version` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `SECONDARY_KEY_3` (`id_chebi`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Contraintes pour les tables déchargées
+--
+
+--
+-- Contraintes pour la table `lab`
+--
+ALTER TABLE `lab`
+  ADD CONSTRAINT `SECONDARY_KEY_2` FOREIGN KEY (`id_chebi`) REFERENCES `molecules` (`id_chebi`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `links`
+--
+ALTER TABLE `links`
+  ADD CONSTRAINT `SECONDARY_KEY_1` FOREIGN KEY (`id_chebi`) REFERENCES `molecules` (`id_chebi`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `ptn`
+--
+ALTER TABLE `ptn`
+  ADD CONSTRAINT `SECONDARY_KEY_3` FOREIGN KEY (`id_chebi`) REFERENCES `molecules` (`id_chebi`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
