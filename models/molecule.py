@@ -7,7 +7,68 @@ class Molecule:
     # initialize bio service library
     service_library = ChEBI()
 
-    def __init__(self, id):
+    # constructor
+    def __init__(self, args):
+        # instantiate class attribute
+        self.id = None
+        self.name = None
+        self.formula = None
+        self.composed = None
+        self.dimension = None
+        self.family = None
+        self.molecule_entity = None
+        self.maximum_link = None
+        self.atoms_number = None
+        self.links_number = None
+        self.atoms = None
+        self.atoms_id = None
+        self.links = None
+        self.atoms_colored_number = None
+        self.links_colored_number = None
+        self.atoms_colored = None
+        self.links_colored = None
+        self.lab = None
+        self.ptn_links_colored = None
+        self.ptn_atoms_colored = None
+        self.canonical_form1 = None
+        self.canonical_form2 = None
+        self.canonical_form3 = None
+        self.canonical_label1 = None
+        self.canonical_label2 = None
+        self.canonical_label3 = None
+
+        # check type of constructor
+        if isinstance(args, tuple):
+            self.existing_molecule(args)  # instantiate existing molecule
+        else:
+            self.new_molecule(args)  # instantiate new molecule
+
+    # instantiate existing molecule
+    def existing_molecule(self, args):
+        self.id = args[0]
+        self.name = args[1]
+        self.formula = args[2]
+        self.dimension = args[3]
+        self.family = args[4]
+        self.maximum_link = args[5]
+        self.atoms_number = args[6]
+        self.links_number = args[7]
+        self.atoms_id = args[8]
+        self.links = args[9]
+        self.atoms_colored_number = args[10]
+        self.links_colored_number = args[11]
+        self.atoms_colored = args[12]
+        self.links_colored = args[13]
+        self.canonical_form1 = args[14]
+        self.canonical_form2 = args[15]
+        self.canonical_form3 = args[16]
+        self.canonical_label1 = args[17]
+        self.canonical_label2 = args[18]
+        self.canonical_label3 = args[19]
+
+    # parse & extract new molecule information
+    def new_molecule(self, id):
+
         # initialize molecule id
         self.id = id
 
@@ -99,7 +160,7 @@ class Molecule:
 
     # get maximum link type inside molecules links (detect multiple & triple links)
     def get_max_link_type(self):
-        if len(self.links) >=1:
+        if len(self.links) >= 1:
             return max([int(type) for _, _, type in self.links])
         else:
             return 0
@@ -446,4 +507,10 @@ class Molecule:
         print('LAB : ', self.lab)
         print('COLORED_ATOMS_PTN : ', self.ptn_atoms_colored)
         print('COLORED_LINKS_PTN : ', self.ptn_links_colored)
+        print('CANONICAL_FORM_1 : ', self.canonical_form1)
+        print('CANONICAL_FORM_2 : ', self.canonical_form2)
+        print('CANONICAL_FORM_3 : ', self.canonical_form3)
+        print('CANONICAL_LABEL_1 : ', self.canonical_label1)
+        print('CANONICAL_LABEL_2 : ', self.canonical_label2)
+        print('CANONICAL_LABEL_3 : ', self.canonical_label3)
         print('---------------------------------------------------------------------')

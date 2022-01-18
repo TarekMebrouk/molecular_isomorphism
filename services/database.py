@@ -1,5 +1,5 @@
+from models.molecule import *
 import mysql.connector
-import models.molecule
 
 
 class Database:
@@ -115,3 +115,14 @@ class Database:
         cursor.execute(statement)
         self.connexion.commit()
         print(f"Molecule '{molecule_id}' deleted successfully")
+
+    # get all molecules
+    def get_molecules(self):
+        molecules = []
+        cursor = self.connexion.cursor()
+        cursor.execute("SELECT * FROM molecules")
+        result_set = cursor.fetchall()
+        for row in result_set:
+            molecules.append(Molecule(row))
+
+        return molecules

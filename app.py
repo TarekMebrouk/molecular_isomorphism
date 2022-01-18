@@ -6,7 +6,7 @@ if __name__ == '__main__':
     parser = Parser()
 
     # extract molecule information
-    molecule = Molecule(id='CHEBI:90')
+    molecule = Molecule(args='CHEBI:90')
     molecule.display()
 
     # clear all rows in tables
