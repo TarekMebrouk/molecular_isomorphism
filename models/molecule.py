@@ -59,12 +59,12 @@ class Molecule:
         self.links_colored_number = args[11]
         self.atoms_colored = self.convert_colored_atoms_list(args[12])
         self.links_colored = self.convert_links_list(args[13])
-        self.canonical_form1 = args[14]
-        self.canonical_form2 = args[15]
-        self.canonical_form3 = args[16]
-        self.canonical_label1 = args[17]
-        self.canonical_label2 = args[18]
-        self.canonical_label3 = args[19]
+        self.canonical_form1 = self.convert_canonical_form(args[14])
+        self.canonical_form2 = self.convert_canonical_form(args[15])
+        self.canonical_form3 = self.convert_canonical_form(args[16])
+        self.canonical_label1 = self.convert_canonical_label(args[17])
+        self.canonical_label2 = self.convert_canonical_label(args[18])
+        self.canonical_label3 = self.convert_canonical_label(args[19])
 
     # parse & extract new molecule information
     def new_molecule(self, id):
@@ -514,6 +514,37 @@ class Molecule:
             args = atom.split(',')
             links.append((args[0], int(args[1]), args[2]))
         return links
+
+    # convert SQL TEXT to canonicals form list
+    @staticmethod
+    def convert_canonical_form(data):
+        canonical_form = []
+        if data is not None:
+            list = data.split(',')
+            for canonic in list:
+                canonical_form.append(float(canonic))
+        return canonical_form
+
+    # convert SQL TEXT to canonicals form list
+    @staticmethod
+    def convert_canonical_label(data):
+        canonical_label = []
+        if data is not None:
+            list = data.split('-')
+            for label in list:
+                canonical_label.append(int(label))
+        return canonical_label
+
+    # compare canonical forms
+    def compare(self, molecule, version=1):
+        if version == 1:  # compare canonical form 1
+            return self.canonical_form1 == molecule.canonical_form1
+
+        if version == 2:  # compare canonical form 2
+            return self.canonical_form2 == molecule.canonical_form2
+
+        if version == 3:  # compare canonical form 3
+            return self.canonical_form3 == molecule.canonical_form3
 
     # display molecule
     def display(self):
