@@ -1,18 +1,27 @@
 from models.molecule import *
 import mysql.connector
+import json
 
 
 class Database:
 
     # initialize database connexion
     def __init__(self):
-        # initialize database
+        # get database connexion configuration from JSON file
+        # Opening JSON file
+        config_file = open('config.json')
+        configuration = json.load(config_file)
+
+        # initialize database connexion
         self.connexion = mysql.connector.connect(
-            host='localhost',
-            user='root',
-            password='',
-            database='molecular_isomorphism'
+            host=configuration['database']['host'],
+            user=configuration['database']['user'],
+            password=configuration['database']['password'],
+            database=configuration['database']['name']
         )
+
+        # close JSON file
+        config_file.close()
 
     # save molecule to database
     def save_molecule(self, molecule):
