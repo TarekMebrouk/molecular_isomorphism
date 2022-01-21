@@ -245,3 +245,21 @@ class Database:
             family_counter[family] = int(cursor.fetchall()[0][0])
 
         return family_counter
+
+    # get all molecules IDs with families
+    def get_molecules_ids(self):
+        molecules = []
+        cursor = self.connexion.cursor()
+        cursor.execute("SELECT id_chebi, family FROM molecules")
+        result_set = cursor.fetchall()
+        for row in result_set:
+            molecules.append((row[0], row[1]))
+
+        return molecules
+
+    # get single molecule data by ID
+    def get_single_molecule(self, molecule_id):
+        cursor = self.connexion.cursor()
+        cursor.execute(f"SELECT * FROM molecules WHERE id_chebi = '{molecule_id}'")
+
+        return Molecule(cursor.fetchall()[0])
