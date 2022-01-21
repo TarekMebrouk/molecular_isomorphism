@@ -38,6 +38,8 @@ class Database:
 
     # save molecule information
     def save_molecule_information(self, molecule):
+        # remove special characters from molecule information (delete ' from string)
+        molecule = self.remove_special_chars(molecule)
         cursor = self.connexion.cursor()
         statement = "INSERT INTO `molecules`(`id_chebi`, `name`, `formula`, `dimension`, `family`, `maximum_link`, " \
                     "`atoms_number`, `links_number`, `atoms`, `links`, `colored_atoms_number`, `colored_links_number`, " \
@@ -49,6 +51,17 @@ class Database:
                     f" '{self.str_list(molecule.atoms_colored)}', '{self.str_list(molecule.links_colored)}')"
         cursor.execute(statement)
         self.connexion.commit()
+
+    # transform molecule information to safe (delete {'} from information to skip SQL exception)
+    @staticmethod
+    def remove_special_chars(molecule):
+
+        molecule.id = str(molecule.id).replace("'", "")
+        molecule.formula = str(molecule.formula).replace("'", "")
+        molecule.name = str(molecule.name).replace("'", "")
+        molecule.dimension = str(molecule.dimension).replace("'", "")
+
+        return molecule
 
     # transform list [('C', 0, 1), ...] to string (for fetching data into database)
     @staticmethod
@@ -109,10 +122,7 @@ class Database:
     # clear all rows inside database tables
     def clear_tables(self):
         cursor = self.connexion.cursor()
-        cursor.execute("TRUNCATE TABLE molecules")
-        cursor.execute("TRUNCATE TABLE links")
-        cursor.execute("TRUNCATE TABLE lab")
-        cursor.execute("TRUNCATE TABLE ptn")
+        cursor.execute("DELETE FROM `molecules`")
         self.connexion.commit()
 
     # delete one molecule by ID
