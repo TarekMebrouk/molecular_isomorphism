@@ -135,7 +135,7 @@ class Database:
         return molecules
 
     # get all molecules ChEBI IDs identical structure
-    def get_molecules_isomorphism(self, molecule_id, version=1):
+    def get_molecules_isomorphism_withAll(self, molecule_id, version=1):
         # prepare statement
         cursor = self.connexion.cursor()
         statement = "SELECT m2.id_chebi from molecules m1, molecules m2 WHERE "
@@ -157,8 +157,32 @@ class Database:
 
         return [row[0] for row in result_set]
 
+    # get all molecules ChEBI IDs identical structure
+    def get_molecules_isomorphism_withFamily(self, molecule_id, family, version=1):
+        # prepare statement
+        cursor = self.connexion.cursor()
+        statement = "SELECT m2.id_chebi from molecules m1, molecules m2 WHERE " \
+                    f"m1.family = m2.family and m1.family = '{family}' and "
+
+        # check of comparison version
+        if version == 1:  # compare canonical form 1
+            statement += "m1.canonical_form1 = m2.canonical_form1 "
+
+        if version == 2:  # compare canonical form 2
+            statement += "m1.canonical_form2 = m2.canonical_form2 "
+
+        if version == 3:  # compare canonical form 3
+            statement += "m1.canonical_form3 = m2.canonical_form3 "
+
+        # execute statement & fetch information
+        statement += f"and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}'"
+        cursor.execute(statement)
+        result_set = cursor.fetchall()
+
+        return [row[0] for row in result_set]
+
     # count isomorphism of each comparison version (canonical form [1, 2, 3])
-    def get_count_isomorphism(self):
+    def get_count_isomorphism_byVersion(self):
         # prepare statement
         cursor = self.connexion.cursor()
         statement_1 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
@@ -182,7 +206,7 @@ class Database:
 
         return int(count_1), int(count_2), int(count_3)
 
-    # count molecules inside each molecular families
+    # count molecules inside each molecular family
     def get_count_family(self):
         cursor = self.connexion.cursor()
 
@@ -192,6 +216,22 @@ class Database:
 
         for family in families:
             cursor.execute(f"SELECT count(id_chebi) from molecules WHERE family = '{family}'")
+            family_counter[family] = int(cursor.fetchall()[0][0])
+
+        return family_counter
+
+    # count isomorphism by family
+    def get_count_isomorphism_byFamily(self):
+        cursor = self.connexion.cursor()
+
+        families = ['Amide', 'Amine', 'Ester', 'Carboxylic acid', 'Ketone', 'Aldehyde', 'Alcohol',
+                    'Halogenated compound', 'Aromatic compound', 'Alken', 'Alkanes', 'Other']
+        family_counter = {}
+
+        for family in families:
+            cursor.execute("SELECT count(m1.id_chebi) from molecules m1, molecules m2 "
+                           "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi "
+                           f"and m1.family = m2.family and m1.family = '{family}'")
             family_counter[family] = int(cursor.fetchall()[0][0])
 
         return family_counter
