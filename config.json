@@ -4,5 +4,8 @@
     "user" : "root",
     "password" : "",
     "name" : "molecular_isomorphism"
+  },
+  "chebi" : {
+    "path" : "ChEBI_complete_3star.sdf"
   }
 }
