@@ -36,6 +36,7 @@ class Molecule:
         self.canonical_label1 = None
         self.canonical_label2 = None
         self.canonical_label3 = None
+        self.time = None
 
         # check type of constructor
         if isinstance(args, tuple):
@@ -65,6 +66,7 @@ class Molecule:
         self.canonical_label1 = self.convert_canonical_label(args[17])
         self.canonical_label2 = self.convert_canonical_label(args[18])
         self.canonical_label3 = self.convert_canonical_label(args[19])
+        self.time = args[20]
 
     # parse & extract new molecule information
     def new_molecule(self, id):

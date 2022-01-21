@@ -32,14 +32,12 @@ class Database:
         cursor = self.connexion.cursor()
         statement = "INSERT INTO `molecules`(`id_chebi`, `name`, `formula`, `dimension`, `family`, `maximum_link`, " \
                     "`atoms_number`, `links_number`, `atoms`, `links`, `colored_atoms_number`, `colored_links_number`, " \
-                    "`atoms_colored`, `links_colored`, `canonical_form1`, `canonical_form2`, " \
-                    "`canonical_form3`, `canonical_label1`, `canonical_label2`, `canonical_label3`) VALUES (" \
+                    "`atoms_colored`, `links_colored`) VALUES (" \
                     f" '{molecule.id}', '{molecule.name}', '{molecule.formula}'," \
                     f" '{molecule.dimension}', '{molecule.family}', {molecule.maximum_link}," \
                     f" {molecule.atoms_number}, {molecule.links_number}, '{self.str_list(molecule.atoms_id)}', '{self.str_list(molecule.links)}'," \
                     f" {molecule.atoms_colored_number}, {molecule.links_colored_number}," \
-                    f" '{self.str_list(molecule.atoms_colored)}', '{self.str_list(molecule.links_colored)}'," \
-                    f" NULL, NULL, NULL, NULL, NULL, NULL)"
+                    f" '{self.str_list(molecule.atoms_colored)}', '{self.str_list(molecule.links_colored)}')"
         cursor.execute(statement)
         self.connexion.commit()
 
