@@ -168,11 +168,11 @@ class Database:
         return [row[0] for row in result_set]
 
     # get all molecules ChEBI IDs identical structure
-    def get_molecules_isomorphism_withFamily(self, molecule_id, family, version=1):
+    def get_molecules_isomorphism_withFamily(self, molecule_id, version=1):
         # prepare statement
         cursor = self.connexion.cursor()
         statement = "SELECT m2.id_chebi from molecules m1, molecules m2 WHERE " \
-                    f"m1.family = m2.family and m1.family = '{family}' and "
+                    f"m1.family = m2.family and "
 
         # check of comparison version
         if version == 1:  # compare canonical form 1
@@ -230,6 +230,34 @@ class Database:
 
         return family_counter
 
+    # count number molecules isomorphism with 'molecule_id'
+    def get_count_isomorphism_byId(self, molecule_id):
+        # prepare statement
+        cursor = self.connexion.cursor()
+        statement_1 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
+                      "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi " \
+                      f"and m1.id_chebi = '{molecule_id}'"
+
+        statement_2 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
+                      "WHERE m1.canonical_form2 = m2.canonical_form2 and m1.id_chebi != m2.id_chebi " \
+                      f"and m1.id_chebi = '{molecule_id}'"
+
+        statement_3 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
+                      "WHERE m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi " \
+                      f"and m1.id_chebi = '{molecule_id}'"
+
+        # execute statement & fetch information
+        cursor.execute(statement_1)
+        count_1 = int(cursor.fetchall()[0][0])
+
+        cursor.execute(statement_2)
+        count_2 = int(cursor.fetchall()[0][0])
+
+        cursor.execute(statement_3)
+        count_3 = int(cursor.fetchall()[0][0])
+
+        return count_1 + count_2 + count_3
+
     # count isomorphism by family
     def get_count_isomorphism_byFamily(self):
         cursor = self.connexion.cursor()
@@ -250,10 +278,10 @@ class Database:
     def get_molecules_ids(self):
         molecules = []
         cursor = self.connexion.cursor()
-        cursor.execute("SELECT id_chebi, family FROM molecules")
+        cursor.execute("SELECT id_chebi, family, name, formula, maximum_link FROM molecules")
         result_set = cursor.fetchall()
         for row in result_set:
-            molecules.append((row[0], row[1]))
+            molecules.append(row)
 
         return molecules
 
