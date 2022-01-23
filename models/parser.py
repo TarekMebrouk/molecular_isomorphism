@@ -1,5 +1,5 @@
-from models.molecule import *
 from services.database import *
+from models.molecule import *
 import json
 
 
@@ -55,5 +55,6 @@ class Parser:
             # extract information & parse molecular structure
             molecule = Molecule(args=id_chebi)
 
-            # save molecule in SQL database
-            database_service.save_molecule(molecule)
+            # save molecule in SQL database (save only molecule not composed)
+            if molecule.atoms_number != 0:
+                database_service.save_molecule(molecule)
