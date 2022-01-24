@@ -1,4 +1,5 @@
 from services.database import *
+from views.graph import *
 import streamlit as st
 
 # constants
@@ -30,33 +31,31 @@ class Home:
         header = st.container()
         statistics = st.container()
         sidebar = st.container()
-        container = st.container()
         molecules_list = st.container()
         single_molecule = st.container()
 
-        # application header (Logo + Title)
-        with header:
-            self.header()
+        # check if any molecule is selected
+        molecule_id = st.session_state.selected_molecule_id
+        if molecule_id != '':
+            # single molecule display
+            with single_molecule:
+                self.single_molecule(molecule_id)
+        else:
+            # application header (Logo + Title)
+            with header:
+                self.header()
 
-        # application statistics (Charts/Graphs)
-        with statistics:
-            self.statistics()
+            # application statistics (Charts/Graphs)
+            with statistics:
+                self.statistics()
 
-        # application sidebar (filters & search)
-        with sidebar:
-            self.sidebar()
+            # application sidebar (filters & search)
+            with sidebar:
+                self.sidebar()
 
-        # application container (molecules list or single molecule)
-        with container:
-
-            # check if any molecule is selected
-            molecule_id = st.session_state.selected_molecule_id
-            if molecule_id != '':
-                with single_molecule:
-                    self.single_molecule(molecule_id)  # single molecule display
-            else:
-                with molecules_list:
-                    self.molecules_list()  # molecules list
+            # molecules list
+            with molecules_list:
+                self.molecules_list()
 
     # Header section
     @staticmethod
@@ -143,11 +142,15 @@ class Home:
         # display return button
         st.button(key=200, label='⮌ back', on_click=back_handler)
 
+        # -1- display title of molecule information
+        st.subheader('Molecule information')
+
         # display molecule information
         col1, _, col2 = st.columns([50, 1, 49])
 
         # left side : display molecule data (name, formula, family, maximum_link, number_isomorphism)
         with col1:
+            st.markdown(f'**CHEBI ID** : {molecule.id}')
             st.markdown(f'**Name** : {molecule.name}')
             st.markdown(f'**Formula** : {molecule.formula}')
             st.markdown(f'**Family** : {molecule.family}')
@@ -163,13 +166,30 @@ class Home:
             total_count = len(isomorphism_all_version1 + isomorphism_all_version2 + isomorphism_all_version3)
             st.markdown(f'**Isomorphism total count** : {total_count}')
             st.markdown('**Isomorphism with all** : '
-                        f'[v1: {len(isomorphism_all_version1)},'
-                        f' v2: {len(isomorphism_all_version2)},'
-                        f' v3: {len(isomorphism_all_version3)}]')
+                        f'*v1*: {len(isomorphism_all_version1)}, '
+                        f'*v2*: {len(isomorphism_all_version2)}, '
+                        f'*v3*: {len(isomorphism_all_version3)}')
             st.markdown('**Isomorphism with same family** : '
-                        f'[v1: {len(isomorphism_family_version1)},'
-                        f' v2: {len(isomorphism_family_version2)},'
-                        f' v3: {len(isomorphism_family_version3)}]')
+                        f'*v1*: {len(isomorphism_family_version1)}, '
+                        f'*v2*: {len(isomorphism_family_version2)}, '
+                        f'*v3*: {len(isomorphism_family_version3)}')
+
+        # display title of molecular structures
+        st.subheader('Molecular structures')
+
+        # display molecule structures (before and after transformation 'coloration')
+        col1, _, col2 = st.columns([50, 1, 49])
+
+        # left side : display molecular structure before transformation
+        graph = Graph(molecule)
+        with col1:
+            st.markdown('**Before transformation**')
+            graph.simple()
+
+        # right side : display molecular structure after transformation (coloration of atoms and links)
+        with col2:
+            st.markdown('**After transformation**')
+            graph.advanced()
 
     # Molecules list section
     def molecules_list(self):
@@ -194,7 +214,7 @@ class Home:
     # molecule expanded item section
     @staticmethod
     def molecule_expanded(molecule_id, index):
-        col1, _, col2 = st.columns([39, 1, 60])
+        col1, _, col2, _, col3 = st.columns([40, 1, 38, 1, 20])
 
         # get molecule data
         database_service = Database()
@@ -203,12 +223,15 @@ class Home:
         # get count of molecule isomorphism with molecule_id
         isomorphism_count = database_service.get_count_isomorphism_byId(molecule_id)
 
-        # left side : display molecule data (name, formula, family, maximum_link, number_isomorphism)
+        # left side : display molecule data
         with col1:
             st.markdown(f'**Name** : {molecule.name}')
             st.markdown(f'**Formula** : {molecule.formula}')
             st.markdown(f'**Family** : {molecule.family}')
             st.markdown(f'**Link type** : {molecule.maximum_link}')
+
+        # middle side : display molecule data
+        with col2:
             st.markdown(f'**Atoms count** : {molecule.atoms_number}')
             st.markdown(f'**Links count** : {molecule.links_number}')
             st.markdown(f'**Isomorphism count** : {isomorphism_count}')
@@ -217,9 +240,8 @@ class Home:
         def next_handler():
             st.session_state.selected_molecule_id = molecule_id
 
-        # right side : display molecule structure
-        with col2:
-            st.write(f'Molecular structure : \n {molecule.atoms_id}')
+        # right side : display button
+        with col3:
             st.button(key=100 + index, label='more details', on_click=next_handler)
 
     # get all molecules IDs
