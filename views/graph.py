@@ -2,6 +2,7 @@ from models.molecule import *
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
+import random
 
 
 class Graph:
@@ -47,7 +48,50 @@ class Graph:
 
         pos = nx.spring_layout(graph)  # nodes positions
 
-        nx.draw(graph, pos, labels=nodes_labels, with_labels=True, font_size=8, node_size=100)  # display nodes
+        colors = self.color_graph_nodes(graph.nodes)  # get nodes colored
+
+        nx.draw(graph, pos, node_color=colors, labels=nodes_labels, with_labels=True, font_size=8, node_size=100)  # display nodes
         nx.draw_networkx_edges(graph, pos)  # display edges
 
         st.pyplot(fig)
+
+    # generate nodes distinct colors (colored graph)
+    @staticmethod
+    def generate_colors(n):
+        hex_values = []
+        r = int(random.random() * 256)
+        g = int(random.random() * 256)
+        b = int(random.random() * 256)
+        step = 256 / n
+        for _ in range(n):
+            r += step
+            g += step
+            b += step
+            r = int(r) % 256
+            g = int(g) % 256
+            b = int(b) % 256
+            r_hex = hex(r)[2:]
+            g_hex = hex(g)[2:]
+            b_hex = hex(b)[2:]
+            color = '#' + r_hex + g_hex + b_hex
+            if len(color) <= 6:
+                color += '0'
+            hex_values.append(color)
+        return hex_values
+
+    # color graph nodes
+    def color_graph_nodes(self, nodes):
+        labels = list(dict.fromkeys([label for label, _, _ in self.molecule.atoms_colored]))
+        colors = self.generate_colors(len(labels))
+        print(colors)
+        color_dict = {labels[i]: colors[i] for i in range(len(labels))}
+
+        self.molecule.atoms_colored.sort(key=lambda element: element[1])
+
+        nodes_colored = []
+        for node in nodes:
+            for atom in self.molecule.atoms_colored:
+                label, id, _ = atom
+                if id == node:
+                    nodes_colored.append(color_dict[label])
+        return nodes_colored
