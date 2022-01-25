@@ -411,6 +411,8 @@ class Molecule:
                 # add link from-ZZZ-to
                 temp_links.append((link_from, atom_id, '1'))
                 temp_links.append((link_to, atom_id, '1'))
+                # delete old link
+                temp_links.remove(link)
 
             # if link = triple link 'link-3'
             if link_type == '3':
@@ -425,6 +427,9 @@ class Molecule:
                 temp_atoms.append(('ZZZ', atom_id, '1'))
                 temp_links.append((last_atom_id, atom_id, '1'))
                 temp_links.append((atom_id, link_to, '1'))
+
+                # delete old link
+                temp_links.remove(link)
 
         return temp_atoms, temp_links
 
