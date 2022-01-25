@@ -522,7 +522,7 @@ class Molecule:
     def convert_canonical_form(data):
         canonical_form = []
         if data is not None:
-            list = data.split(',')
+            list = data.split('|')
             for canonic in list:
                 canonical_form.append(float(canonic))
         return canonical_form
@@ -532,7 +532,7 @@ class Molecule:
     def convert_canonical_label(data):
         canonical_label = []
         if data is not None:
-            list = data.split('-')
+            list = data.split('|')
             for label in list:
                 canonical_label.append(int(label))
         return canonical_label
