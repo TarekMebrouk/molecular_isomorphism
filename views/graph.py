@@ -3,6 +3,7 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
+import numpy as np
 
 
 class Graph:
@@ -22,12 +23,12 @@ class Graph:
 
         graph.add_weighted_edges_from(edges)  # add edges
 
-        pos = nx.spring_layout(graph)  # nodes positions
+        pos = self.generate_simple_positions()  # nodes positions
 
-        nx.draw(graph, pos, labels=nodes_labels, with_labels=True, font_size=8, node_size=100)  # display nodes
+        nx.draw(graph, pos=pos, labels=nodes_labels, with_labels=True, font_size=8, node_size=100)  # display nodes
 
         edge_weight = nx.get_edge_attributes(graph, 'weight')  # get edges weighted
-        nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_weight, font_size=5)  # display edges
+        nx.draw_networkx_edge_labels(graph, pos=pos, edge_labels=edge_weight, font_size=5)  # display edges
 
         st.pyplot(fig)
 
@@ -46,12 +47,12 @@ class Graph:
 
         graph.add_edges_from(edges)  # add edges
 
-        pos = nx.spring_layout(graph)  # nodes positions
+        pos = self.generate_advanced_positions()  # nodes positions
 
         colors = self.color_graph_nodes(graph.nodes)  # get nodes colored
 
-        nx.draw(graph, pos, node_color=colors, labels=nodes_labels, with_labels=True, font_size=8, node_size=100)  # display nodes
-        nx.draw_networkx_edges(graph, pos)  # display edges
+        nx.draw(graph, pos=pos, node_color=colors, labels=nodes_labels, with_labels=True, font_size=8, node_size=100)  # display nodes
+        nx.draw_networkx_edges(graph, pos=pos)  # display edges
 
         st.pyplot(fig)
 
@@ -83,7 +84,6 @@ class Graph:
     def color_graph_nodes(self, nodes):
         labels = list(dict.fromkeys([label for label, _, _ in self.molecule.atoms_colored]))
         colors = self.generate_colors(len(labels))
-        print(colors)
         color_dict = {labels[i]: colors[i] for i in range(len(labels))}
 
         self.molecule.atoms_colored.sort(key=lambda element: element[1])
@@ -95,3 +95,27 @@ class Graph:
                 if id == node:
                     nodes_colored.append(color_dict[label])
         return nodes_colored
+
+    # generate simple nodes positions using molecular representation of ChEBI in 2D
+    def generate_simple_positions(self):
+        return {id: np.array([x, y]) for id, x, y in self.molecule.positions}
+
+    # generate advanced nodes positions using molecular representation of ChEBI in 2D
+    def generate_advanced_positions(self):
+        positions = {id: np.array([x, y]) for id, x, y in self.molecule.positions}
+
+        for _, id, _ in self.molecule.atoms_colored:
+
+            if id not in positions.keys():
+                neighbors = []
+                for from_id, to_id, _ in self.molecule.links_colored:
+                    if from_id == id:
+                        neighbors.append(to_id)
+                    if to_id == id:
+                        neighbors.append(from_id)
+
+                # add position in middle
+                x = (positions.get(neighbors[0])[0] + positions.get(neighbors[1])[0]) / 2
+                y = (positions.get(neighbors[0])[1] + positions.get(neighbors[1])[1]) / 2
+                positions[id] = np.array([x, y])
+        return positions
