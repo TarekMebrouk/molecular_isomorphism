@@ -98,7 +98,7 @@ class Molecule:
 
         # delete all 'H' atoms from atoms & links lists
         if not self.composed:
-            self.atoms_id, self.links = self.delete_H_from_molecule()
+            self.atoms_id, self.links, self.positions = self.delete_H_from_molecule()
 
         # init number of atoms & links
         self.atoms_number = len(self.atoms_id)
@@ -196,7 +196,13 @@ class Molecule:
             if i not in delete_links:
                 new_links.append(self.links[i])
 
-        return new_atoms, new_links
+        # delete atoms positions in 2D
+        new_positions = []
+        for position in self.positions:
+            if position[0] in [id for _, id in new_atoms]:
+                new_positions.append(position)
+
+        return new_atoms, new_links, new_positions
 
     # get & classify molecule family
     def get_family(self):
