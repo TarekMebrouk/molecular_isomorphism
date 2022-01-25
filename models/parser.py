@@ -52,9 +52,14 @@ class Parser:
             counter += 1
             print(f'Molecule N°{counter}')
 
-            # extract information & parse molecular structure
-            molecule = Molecule(args=id_chebi)
+            try:
+                # extract information & parse molecular structure
+                molecule = Molecule(args=id_chebi)
 
-            # save molecule in SQL database (save only molecule not composed)
-            if molecule.atoms_number != 0:
-                database_service.save_molecule(molecule)
+                # save molecule in SQL database (save only molecule not composed)
+                if molecule.atoms_number != 0:
+                    database_service.save_molecule(molecule)
+
+            except Exception:
+                print(f'Exception in molecule {id_chebi}')
+                pass

@@ -22,6 +22,7 @@ class Molecule:
         self.links_number = None
         self.atoms = None
         self.atoms_id = None
+        self.positions = None
         self.links = None
         self.atoms_colored_number = None
         self.links_colored_number = None
@@ -55,18 +56,19 @@ class Molecule:
         self.atoms_number = args[6]
         self.links_number = args[7]
         self.atoms_id = self.convert_atoms_list(args[8])
-        self.links = self.convert_links_list(args[9])
-        self.atoms_colored_number = args[10]
-        self.links_colored_number = args[11]
-        self.atoms_colored = self.convert_colored_atoms_list(args[12])
-        self.links_colored = self.convert_links_list(args[13])
-        self.canonical_form1 = self.convert_canonical_form(args[14])
-        self.canonical_form2 = self.convert_canonical_form(args[15])
-        self.canonical_form3 = self.convert_canonical_form(args[16])
-        self.canonical_label1 = self.convert_canonical_label(args[17])
-        self.canonical_label2 = self.convert_canonical_label(args[18])
-        self.canonical_label3 = self.convert_canonical_label(args[19])
-        self.time = args[20]
+        self.positions = self.convert_atoms_positions(args[9])
+        self.links = self.convert_links_list(args[10])
+        self.atoms_colored_number = args[11]
+        self.links_colored_number = args[12]
+        self.atoms_colored = self.convert_colored_atoms_list(args[13])
+        self.links_colored = self.convert_links_list(args[14])
+        self.canonical_form1 = self.convert_canonical_form(args[15])
+        self.canonical_form2 = self.convert_canonical_form(args[16])
+        self.canonical_form3 = self.convert_canonical_form(args[17])
+        self.canonical_label1 = self.convert_canonical_label(args[18])
+        self.canonical_label2 = self.convert_canonical_label(args[19])
+        self.canonical_label3 = self.convert_canonical_label(args[20])
+        self.time = args[21]
 
     # parse & extract new molecule information
     def new_molecule(self, id):
@@ -89,10 +91,10 @@ class Molecule:
         # get molecule 'type' : composed or not
         self.composed = '.' in self.formula
 
-        # get molecule 'atoms_id' & 'links'
+        # get molecule 'atoms_id' & 'links' & '2D-positions'
         self.atoms_id, self.links = [], []
         if not self.composed:
-            self.atoms_id, self.links = self.get_structure()
+            self.atoms_id, self.links, self.positions = self.get_structure()
 
         # delete all 'H' atoms from atoms & links lists
         if not self.composed:
@@ -142,13 +144,14 @@ class Molecule:
 
         # extract atoms & links from molecule structure 'Marven'
         atom_id = 0
-        atoms, links = [], []
+        atoms, links, positions = [], [], []
 
         for line in molecule_structure:
             # check if len(line) >= 12 = atoms
             if len(line) >= 12:
                 atom_id += 1
                 atoms.append((line[3], atom_id))  # add new atom
+                positions.append((atom_id, float(line[0]), float(line[1])))
 
             # check if len(line) < 12 & line contains only digit
             elif 12 > len(line) >= 4 and ''.join([str(elem) for elem in line]).isdigit():
@@ -158,7 +161,7 @@ class Molecule:
                 if exists(int(line[0])) and exists(int(line[1])):
                     links.append((int(line[0]), int(line[1]), line[2]))  # add new link
 
-        return atoms, links
+        return atoms, links, positions
 
     # get maximum link type inside molecules links (detect multiple & triple links)
     def get_max_link_type(self):
@@ -412,7 +415,7 @@ class Molecule:
                 temp_links.append((link_from, atom_id, '1'))
                 temp_links.append((link_to, atom_id, '1'))
                 # delete old link
-                temp_links.remove(link)
+                temp_links.remove((link_from, link_to, '0'))
 
             # if link = triple link 'link-3'
             if link_type == '3':
@@ -429,7 +432,7 @@ class Molecule:
                 temp_links.append((atom_id, link_to, '1'))
 
                 # delete old link
-                temp_links.remove(link)
+                temp_links.remove((link_from, link_to, '0'))
 
         return temp_atoms, temp_links
 
@@ -512,6 +515,16 @@ class Molecule:
             atoms.append((args[0], int(args[1])))
         return atoms
 
+    # convert SQL TEXT to 2D positions list
+    @staticmethod
+    def convert_atoms_positions(data):
+        positions = []
+        list = data[:-1].split('|')
+        for atom in list:
+            args = atom.split(',')
+            positions.append((int(args[0]), float(args[1]), float(args[2])))
+        return positions
+
     # convert SQL TEXT to colored_atoms list
     @staticmethod
     def convert_colored_atoms_list(data):
@@ -566,6 +579,7 @@ class Molecule:
         print('LINKS NUMBER : ', self.links_number)
         print('ATOMS : ', self.atoms)
         print('ATOMS_ID : ', self.atoms_id)
+        print('POSITIONS : ', self.positions)
         print('LINKS : ', self.links)
         print('MAXIMUM_LINK_TYPE : ', self.maximum_link)
         print('ATOMS_NUMBER_TRANSFORMED : ', self.atoms_colored_number)
