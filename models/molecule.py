@@ -4,8 +4,6 @@ from bioservices import ChEBI
 
 
 class Molecule:
-    # initialize bio service library
-    service_library = ChEBI()
 
     # constructor
     def __init__(self, args):
@@ -43,6 +41,8 @@ class Molecule:
         if isinstance(args, tuple):
             self.existing_molecule(args)  # instantiate existing molecule
         else:
+            # initialize bio service library
+            self.service_library = ChEBI()
             self.new_molecule(args)  # instantiate new molecule
 
     # instantiate existing molecule
@@ -403,6 +403,9 @@ class Molecule:
         temp_atoms = [(atom_name, atom_id, '0') for atom_name, atom_id in self.atoms_id]
         temp_links = [(link_from, link_to, '0') for link_from, link_to, _ in self.links]
 
+        # create temporary positions dictionary
+        positions = {id: (x, y) for id, x, y in self.positions}
+
         # link coloring for 2-link & 3-link
         if len(self.atoms_id) > 0:
             atom_id = max([id for _, id in self.atoms_id])
@@ -423,6 +426,11 @@ class Molecule:
                 # delete old link
                 temp_links.remove((link_from, link_to, '0'))
 
+                # add new atom 2D position to positions list
+                x = (positions.get(link_from)[0] + positions.get(link_to)[0]) / 2
+                y = (positions.get(link_from)[1] + positions.get(link_to)[1]) / 2
+                self.positions.append((atom_id, x, y))
+
             # if link = triple link 'link-3'
             if link_type == '3':
                 # add first new atoms 'ZZZ' with its links
@@ -439,6 +447,18 @@ class Molecule:
 
                 # delete old link
                 temp_links.remove((link_from, link_to, '0'))
+
+                # add new atom 2D position to positions list
+                x_middle = (positions.get(link_from)[0] + positions.get(link_to)[0]) / 2
+                y_middle = (positions.get(link_from)[1] + positions.get(link_to)[1]) / 2
+
+                x1 = (positions.get(link_from)[0] + x_middle) / 2
+                y1 = (positions.get(link_from)[1] + y_middle) / 2
+
+                x2 = (x_middle + positions.get(link_to)[0]) / 2
+                y2 = (y_middle + positions.get(link_to)[1]) / 2
+                self.positions.append((atom_id-1, x1, y1))
+                self.positions.append((atom_id, x2, y2))
 
         return temp_atoms, temp_links
 

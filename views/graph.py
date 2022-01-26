@@ -23,7 +23,7 @@ class Graph:
 
         graph.add_weighted_edges_from(edges)  # add edges
 
-        pos = self.generate_simple_positions()  # nodes positions
+        pos = self.generate_positions()  # nodes positions
 
         nx.draw(graph, pos=pos, labels=nodes_labels, with_labels=True, font_size=8, node_size=100)  # display nodes
 
@@ -47,7 +47,7 @@ class Graph:
 
         graph.add_edges_from(edges)  # add edges
 
-        pos = self.generate_advanced_positions()  # nodes positions
+        pos = self.generate_positions()  # nodes positions
 
         colors = self.color_graph_nodes(graph.nodes)  # get nodes colored
 
@@ -96,26 +96,6 @@ class Graph:
                     nodes_colored.append(color_dict[label])
         return nodes_colored
 
-    # generate simple nodes positions using molecular representation of ChEBI in 2D
-    def generate_simple_positions(self):
+    # generate nodes positions using molecular representation of ChEBI in 2D
+    def generate_positions(self):
         return {id: np.array([x, y]) for id, x, y in self.molecule.positions}
-
-    # generate advanced nodes positions using molecular representation of ChEBI in 2D
-    def generate_advanced_positions(self):
-        positions = {id: np.array([x, y]) for id, x, y in self.molecule.positions}
-
-        for _, id, _ in self.molecule.atoms_colored:
-
-            if id not in positions.keys():
-                neighbors = []
-                for from_id, to_id, _ in self.molecule.links_colored:
-                    if from_id == id:
-                        neighbors.append(to_id)
-                    if to_id == id:
-                        neighbors.append(from_id)
-
-                # add position in middle
-                x = (positions.get(neighbors[0])[0] + positions.get(neighbors[1])[0]) / 2
-                y = (positions.get(neighbors[0])[1] + positions.get(neighbors[1])[1]) / 2
-                positions[id] = np.array([x, y])
-        return positions
