@@ -67,9 +67,22 @@ class Home:
             st.header('Molecular isomorphism')
 
     # Statistics section
-    @staticmethod
-    def statistics():
-        pass
+    def statistics(self):
+
+        # display families statistics
+        st.subheader('Families statistics')
+        self.bar_chart_families_count()
+
+        # display isomorphism statistics
+        st.subheader('Isomorphism statistics')
+
+        col1, _, col2 = st.columns([50, 1, 49])
+        # isomorphism by version
+        with col1:
+            self.pie_chart_isomorphism_byVersion()
+        # isomorphism by family
+        with col2:
+            self.pie_chart_isomorphism_byFamily()
 
     # sidebar section
     def sidebar(self):
@@ -276,3 +289,56 @@ class Home:
                 molecules_filtered = [st.session_state.search_molecule_id]
 
         return molecules_filtered
+
+    # display pie chart of isomorphism by version
+    @staticmethod
+    def pie_chart_isomorphism_byVersion():
+        # get count isomorphism by version
+        version_1, version_2, version_3 = Database().get_count_isomorphism_byVersion()
+
+        # Pie chart, where the slices will be ordered and plotted counter-clockwise:
+        labels = 'Simple', 'Atom colored', 'Link colored'
+        total = version_1 + version_2 + version_3
+        st.markdown(f'**Total isomorphism : ** : {total}')
+        if total != 0:
+            sizes = [version_1 * 100 / total, version_2 * 100 / total, version_3 * 100 / total]
+            explode = (0.1, 0, 0)
+
+            fig1, ax1 = plt.subplots()
+            ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True, startangle=90)
+            ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+            st.pyplot(fig1)
+
+    # display bar chart of families molecules count
+    @staticmethod
+    def bar_chart_families_count():
+        # get families molecules count
+        family_dict = Database().get_count_family()
+        st.caption(f'**Total molecules : ** {sum(list(family_dict.values()))}')
+
+        fig = plt.figure(figsize=(10, 5))
+
+        plt.barh(list(family_dict.keys()), list(family_dict.values()))
+        plt.ylabel("Molecular families")
+        plt.xlabel("Number of molecules")
+        st.pyplot(fig)
+
+    # display pie chart of isomorphism by version
+    @staticmethod
+    def pie_chart_isomorphism_byFamily():
+        # get count isomorphism by family
+        family_dict = Database().get_count_isomorphism_byFamily()
+
+        # Pie chart, where the slices will be ordered and plotted counter-clockwise:
+        labels = list(family_dict.keys())
+        total = sum(list(family_dict.values()))
+        st.markdown('')
+        if total != 0:
+            sizes = list(family_dict.values())
+
+            fig1, ax1 = plt.subplots()
+            ax1.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=True, startangle=90)
+            ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+            st.pyplot(fig1)
