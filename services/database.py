@@ -42,11 +42,12 @@ class Database:
         molecule = self.remove_special_chars(molecule)
         cursor = self.connexion.cursor()
         statement = "INSERT INTO `molecules`(`id_chebi`, `name`, `formula`, `dimension`, `family`, `maximum_link`, " \
-                    "`atoms_number`, `links_number`, `atoms`, `links`, `colored_atoms_number`, `colored_links_number`, " \
+                    "`atoms_number`, `links_number`, `atoms`, `positions`, `links`, `colored_atoms_number`, `colored_links_number`, " \
                     "`atoms_colored`, `links_colored`) VALUES (" \
                     f" '{molecule.id}', '{molecule.name}', '{molecule.formula}'," \
                     f" '{molecule.dimension}', '{molecule.family}', {molecule.maximum_link}," \
-                    f" {molecule.atoms_number}, {molecule.links_number}, '{self.str_list(molecule.atoms_id)}', '{self.str_list(molecule.links)}'," \
+                    f" {molecule.atoms_number}, {molecule.links_number}, '{self.str_list(molecule.atoms_id)}'," \
+                    f" '{self.str_list(molecule.positions)}', '{self.str_list(molecule.links)}'," \
                     f" {molecule.atoms_colored_number}, {molecule.links_colored_number}," \
                     f" '{self.str_list(molecule.atoms_colored)}', '{self.str_list(molecule.links_colored)}')"
         cursor.execute(statement)
@@ -268,7 +269,8 @@ class Database:
 
         for family in families:
             cursor.execute("SELECT count(m1.id_chebi) from molecules m1, molecules m2 "
-                           "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi "
+                           "WHERE m1.canonical_form1 = m2.canonical_form1 or m1.canonical_form2 = m2.canonical_form2 "
+                           "or m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi "
                            f"and m1.family = m2.family and m1.family = '{family}'")
             family_counter[family] = int(cursor.fetchall()[0][0])
 
