@@ -156,7 +156,9 @@ class Database:
             statement += "m1.canonical_form1 = m2.canonical_form1 "
 
         if version == 2:  # compare canonical form 2
-            statement += "m1.canonical_form2 = m2.canonical_form2 "
+            statement += "m1.canonical_form2 = m2.canonical_form2 " \
+                         "and m1.colored_atoms_number = m2.colored_atoms_number " \
+                         "and m1.colored_links_number = m2.colored_links_number "
 
         if version == 3:  # compare canonical form 3
             statement += "m1.canonical_form3 = m2.canonical_form3 "
@@ -180,7 +182,9 @@ class Database:
             statement += "m1.canonical_form1 = m2.canonical_form1 "
 
         if version == 2:  # compare canonical form 2
-            statement += "m1.canonical_form2 = m2.canonical_form2 "
+            statement += "m1.canonical_form2 = m2.canonical_form2 " \
+                         "and m1.colored_atoms_number = m2.colored_atoms_number " \
+                         "and m1.colored_links_number = m2.colored_links_number "
 
         if version == 3:  # compare canonical form 3
             statement += "m1.canonical_form3 = m2.canonical_form3 "
@@ -200,7 +204,10 @@ class Database:
                       "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi"
 
         statement_2 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form2 = m2.canonical_form2 and m1.id_chebi != m2.id_chebi"
+                      "WHERE m1.canonical_form2 = m2.canonical_form2 " \
+                      "and m1.colored_atoms_number = m2.colored_atoms_number " \
+                      "and m1.colored_links_number = m2.colored_links_number " \
+                      "and m1.id_chebi != m2.id_chebi"
 
         statement_3 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
                       "WHERE m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi"
@@ -240,7 +247,10 @@ class Database:
                       f"and m1.id_chebi = '{molecule_id}'"
 
         statement_2 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form2 = m2.canonical_form2 and m1.id_chebi != m2.id_chebi " \
+                      "WHERE m1.canonical_form2 = m2.canonical_form2 " \
+                      "and m1.colored_atoms_number = m2.colored_atoms_number " \
+                      "and m1.colored_links_number = m2.colored_links_number " \
+                      "and m1.id_chebi != m2.id_chebi " \
                       f"and m1.id_chebi = '{molecule_id}'"
 
         statement_3 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \

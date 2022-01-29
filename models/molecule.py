@@ -149,9 +149,9 @@ class Molecule:
         for line in molecule_structure:
             # check if len(line) >= 12 = atoms
             if len(line) >= 12:
-                atom_id += 1
                 atoms.append((line[3], atom_id))  # add new atom
                 positions.append((atom_id, float(line[0]), float(line[1])))
+                atom_id += 1
 
             # check if len(line) < 12 & line contains only digit
             elif 12 > len(line) >= 4 and ''.join([str(elem) for elem in line]).isdigit():
