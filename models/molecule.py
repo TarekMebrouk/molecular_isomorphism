@@ -158,8 +158,8 @@ class Molecule:
 
                 # check if line[0] and line[1] are available ID (inside atoms list)
                 exists = lambda id: len([x for _, x in atoms if x == id]) > 0
-                if exists(int(line[0])) and exists(int(line[1])):
-                    links.append((int(line[0]), int(line[1]), line[2]))  # add new link
+                if exists(int(line[0]) - 1) and exists(int(line[1]) - 1):
+                    links.append((int(line[0]) - 1, int(line[1]) - 1, line[2]))  # add new link
 
         return atoms, links, positions
 
@@ -172,9 +172,12 @@ class Molecule:
 
     # delete all 'H' atoms from molecule (to speed up isomorphism detection algorithm)
     def delete_H_from_molecule(self):
+        # sort atoms id by there ID
+        self.atoms_id.sort(key=lambda element: element[1])
+
+        # search for 'H' atoms to delete
         delete_atoms = []
         delete_links = []
-
         for i in range(0, len(self.atoms_id)):
             atom_name, atom_id = self.atoms_id[i]
             if atom_name == 'H':
@@ -201,6 +204,26 @@ class Molecule:
         for position in self.positions:
             if position[0] in [id for _, id in new_atoms]:
                 new_positions.append(position)
+
+        # reorganize atoms IDs in atoms, links and positions lists
+        for i in range(len(new_atoms)):
+            if new_atoms[i][1] != i:
+
+                # change atom ID inside links list first
+                for j in range(len(new_links)):
+                    if new_links[j][0] == new_atoms[i][1]:
+                        new_links[j] = (i, new_links[j][1], new_links[j][2])
+                    if new_links[j][1] == new_atoms[i][1]:
+                        new_links[j] = (new_links[j][0], i, new_links[j][2])
+
+                # change atom ID inside positions list second
+                for k in range(len(new_positions)):
+                    if new_positions[k][0] == new_atoms[i][1]:
+                        new_positions[k] = (i, new_positions[k][1], new_positions[k][2])
+                        break
+
+                # change atom ID inside atoms list third
+                new_atoms[i] = (new_atoms[i][0], i)
 
         return new_atoms, new_links, new_positions
 
@@ -407,10 +430,7 @@ class Molecule:
         positions = {id: (x, y) for id, x, y in self.positions}
 
         # link coloring for 2-link & 3-link
-        if len(self.atoms_id) > 0:
-            atom_id = max([id for _, id in self.atoms_id])
-        else:
-            atom_id = len(self.atoms_id)
+        atom_id = len(self.atoms_id)
 
         for link in self.links:
             link_from, link_to, link_type = link
@@ -418,7 +438,6 @@ class Molecule:
             # if link = double link 'link-2'
             if link_type == '2':
                 # add one new atom 'ZZZ'
-                atom_id += 1
                 temp_atoms.append(('ZZZ', atom_id, '1'))
                 # add link from-ZZZ-to
                 temp_links.append((link_from, atom_id, '1'))
@@ -430,17 +449,17 @@ class Molecule:
                 x = (positions.get(link_from)[0] + positions.get(link_to)[0]) / 2
                 y = (positions.get(link_from)[1] + positions.get(link_to)[1]) / 2
                 self.positions.append((atom_id, x, y))
+                atom_id += 1
 
             # if link = triple link 'link-3'
             if link_type == '3':
                 # add first new atoms 'ZZZ' with its links
-                atom_id += 1
                 temp_atoms.append(('ZZZ', atom_id, '1'))
                 temp_links.append((link_from, atom_id, '1'))
                 last_atom_id = atom_id
+                atom_id += 1
 
                 # add second new atom 'ZZZ' with its links
-                atom_id += 1
                 temp_atoms.append(('ZZZ', atom_id, '1'))
                 temp_links.append((last_atom_id, atom_id, '1'))
                 temp_links.append((atom_id, link_to, '1'))
@@ -459,6 +478,7 @@ class Molecule:
                 y2 = (y_middle + positions.get(link_to)[1]) / 2
                 self.positions.append((atom_id-1, x1, y1))
                 self.positions.append((atom_id, x2, y2))
+                atom_id += 1
 
         return temp_atoms, temp_links
 

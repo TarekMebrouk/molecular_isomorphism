@@ -299,7 +299,7 @@ class Home:
         # Pie chart, where the slices will be ordered and plotted counter-clockwise:
         labels = 'Simple', 'Atom colored', 'Link colored'
         total = version_1 + version_2 + version_3
-        st.markdown(f'**Total isomorphism : ** : {total}')
+        st.markdown(f'**Total isomorphism : ** {total}')
         if total != 0:
             sizes = [version_1 * 100 / total, version_2 * 100 / total, version_3 * 100 / total]
             explode = (0.1, 0, 0)
