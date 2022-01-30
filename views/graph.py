@@ -75,7 +75,7 @@ class Graph:
             g_hex = hex(g)[2:]
             b_hex = hex(b)[2:]
             color = '#' + r_hex + g_hex + b_hex
-            if len(color) <= 6:
+            while len(color) <= 6:
                 color += '0'
             hex_values.append(color)
         return hex_values

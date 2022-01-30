@@ -5,6 +5,8 @@ import streamlit as st
 # constants
 families = ['All', 'Amide', 'Amine', 'Ester', 'Carboxylic acid', 'Ketone', 'Aldehyde', 'Alcohol', 'Halogenated compound', 'Aromatic compound', 'Alken', 'Alkanes', 'Other']
 molecules_type = ['All', 'single', 'double', 'triple']
+comparison_type = ['All', 'Family']
+comparison_version = ['Version 1', 'Version 2', 'Version 3']
 
 
 class Home:
@@ -25,6 +27,12 @@ class Home:
             st.session_state.selected_molecule_name = ''
         if 'selected_molecule_formula' not in st.session_state:
             st.session_state.selected_molecule_formula = ''
+        if 'selected_comparison_type' not in st.session_state:
+            st.session_state.selected_comparison_type = 'All'
+        if 'selected_comparison_version' not in st.session_state:
+            st.session_state.selected_comparison_version = 'All'
+        if 'selected_comparison_molecule_id' not in st.session_state:
+            st.session_state.selected_comparison_molecule_id = ''
 
         # page sections & settings
         st.set_page_config(layout="wide")
@@ -163,26 +171,27 @@ class Home:
 
         # left side : display molecule data (name, formula, family, maximum_link, number_isomorphism)
         with col1:
-            st.markdown(f'**CHEBI ID** : {molecule.id}')
-            st.markdown(f'**Name** : {molecule.name}')
-            st.markdown(f'**Formula** : {molecule.formula}')
-            st.markdown(f'**Family** : {molecule.family}')
-            st.markdown('**Star** : ⭐⭐⭐')
-            st.markdown(f'**Atoms count** : {molecule.atoms_number}')
-            st.markdown(f'**Links count** : {molecule.links_number}')
+            st.markdown(f'**CHEBI ID : ** {molecule.id}')
+            st.markdown(f'**Name : ** {molecule.name}')
+            st.markdown(f'**Formula : ** {molecule.formula}')
+            st.markdown(f'**Family : ** {molecule.family}')
+            st.markdown('**Star : ** ⭐⭐⭐')
+            st.markdown(f'**Dimension : ** {molecule.dimension}')
+            st.markdown(f'**Atoms count : ** {molecule.atoms_number}')
 
         # right side : display molecule structure
         with col2:
-            st.markdown(f'**Link type** : {molecule.maximum_link}')
-            st.markdown(f'**Colored atoms count** : {molecule.atoms_colored_number}')
-            st.markdown(f'**Colored links count** : {molecule.links_colored_number}')
+            st.markdown(f'**Links count : ** {molecule.links_number}')
+            st.markdown(f'**Link type : ** {molecule.maximum_link}')
+            st.markdown(f'**Colored atoms count : ** {molecule.atoms_colored_number}')
+            st.markdown(f'**Colored links count : ** {molecule.links_colored_number}')
             total_count = len(isomorphism_all_version1 + isomorphism_all_version2 + isomorphism_all_version3)
-            st.markdown(f'**Isomorphism total count** : {total_count}')
-            st.markdown('**Isomorphism with all** : '
+            st.markdown(f'**Isomorphism total count : ** {total_count}')
+            st.markdown('**Isomorphism with all : ** '
                         f'*v1*: {len(isomorphism_all_version1)}, '
                         f'*v2*: {len(isomorphism_all_version2)}, '
                         f'*v3*: {len(isomorphism_all_version3)}')
-            st.markdown('**Isomorphism with same family** : '
+            st.markdown('**Isomorphism with same family : ** '
                         f'*v1*: {len(isomorphism_family_version1)}, '
                         f'*v2*: {len(isomorphism_family_version2)}, '
                         f'*v3*: {len(isomorphism_family_version3)}')
@@ -194,15 +203,87 @@ class Home:
         col1, _, col2 = st.columns([50, 1, 49])
 
         # left side : display molecular structure before transformation
-        graph = Graph(molecule)
+        principal_graph = Graph(molecule)
         with col1:
             st.markdown('**Before transformation**')
-            graph.simple()
+            principal_graph.simple()
 
         # right side : display molecular structure after transformation (coloration of atoms and links)
         with col2:
             st.markdown('**After transformation**')
-            graph.advanced()
+            principal_graph.advanced()
+
+        # display title of isomorphism section
+        st.subheader('Molecular isomorphism')
+
+        # display menu filter (select :: Family & Version & ChEBI ID)
+        col1, _, col2, _, col3 = st.columns([24, 1, 25, 1, 49])
+
+        with col1:  # select comparison type (with all, by family)
+            st.session_state.selected_comparison_type = st.selectbox(label='Select comparison type',
+                                                                     index=0,
+                                                                     options=comparison_type)
+
+        with col2:  # select comparison type (all, version 1, version 2, version 3)
+            st.session_state.selected_comparison_version = st.selectbox(label='Select comparison version',
+                                                                        index=0,
+                                                                        options=comparison_version)
+
+        # get all isomorphism molecules filtered by comparison version & family
+        isomorphism_molecules = database_service.get_molecules_isomorphism(molecule_id=molecule_id,
+                                                                           comparison_type=st.session_state.selected_comparison_type,
+                                                                           comparison_version=comparison_version.index(st.session_state.selected_comparison_version) + 1)
+
+        with col3:  # search molecule isomorphism by ChEBI ID
+            molecules_isomorphism = [''] + [id for id in isomorphism_molecules]
+            st.session_state.selected_comparison_molecule_id = st.selectbox(label='Search molecule by ChEBI ID',
+                                                                            index=0,
+                                                                            options=molecules_isomorphism)
+
+        # display molecular structure comparison
+        st.caption(f'{len(isomorphism_molecules)} molecules found\n')
+        if st.session_state.selected_comparison_molecule_id != '':
+            # get selected molecule information
+            selected_molecule = database_service.get_single_molecule(st.session_state.selected_comparison_molecule_id)
+
+            # write some information about selected molecule structure
+            # display molecule information
+            col1, _, col2, _, col3 = st.columns([33, 1, 31, 1, 33])
+
+            # left side
+            with col1:
+                st.markdown(f'**Name : ** {selected_molecule.name}')
+                st.markdown(f'**Formula : ** {selected_molecule.formula}')
+                st.markdown(f'**Family : ** {selected_molecule.family}')
+
+            # middle side
+            with col2:
+                st.markdown(f'**Atoms count : ** {selected_molecule.atoms_number}')
+                st.markdown(f'**Links count : ** {selected_molecule.links_number}')
+
+            # right side
+            with col3:
+                st.markdown(f'**Colored atoms count : ** {selected_molecule.atoms_colored_number}')
+                st.markdown(f'**Colored links count : ** {selected_molecule.links_colored_number}')
+
+            # display selected molecule structure compared to the principal molecule
+            col1, _, col2 = st.columns([50, 1, 49])
+
+            second_graph = Graph(selected_molecule)
+            with col1:
+                st.markdown('**Principal molecule**')
+                if st.session_state.selected_comparison_version == 'Version 1':
+                    principal_graph.simple()
+                else:
+                    principal_graph.advanced()
+            with col2:
+                st.markdown('**Molecule to compare**')
+                if st.session_state.selected_comparison_version == 'Version 1':
+                    second_graph.simple()
+                else:
+                    second_graph.advanced()
+        else:
+            st.caption('no molecules have been selected')
 
     # Molecules list section
     def molecules_list(self):

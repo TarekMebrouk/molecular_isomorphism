@@ -303,3 +303,13 @@ class Database:
         cursor.execute(f"SELECT * FROM molecules WHERE id_chebi = '{molecule_id}'")
 
         return Molecule(cursor.fetchall()[0])
+
+    # get molecules isomorphism
+    def get_molecules_isomorphism(self, molecule_id, comparison_type, comparison_version):
+        # check the type of comparison
+        if comparison_type == 'All':  # get all molecules isomorphism compare with all database
+            return self.get_molecules_isomorphism_withAll(molecule_id, comparison_version)
+
+        else:  # get all molecules isomorphism in the same molecular family
+            return self.get_molecules_isomorphism_withFamily(molecule_id, comparison_version)
+
