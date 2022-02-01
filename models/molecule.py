@@ -4,6 +4,7 @@ from bioservices import ChEBI
 
 
 class Molecule:
+    service_library = None
 
     # constructor
     def __init__(self, args):
@@ -42,7 +43,8 @@ class Molecule:
             self.existing_molecule(args)  # instantiate existing molecule
         else:
             # initialize bio service library
-            self.service_library = ChEBI()
+            if Molecule.service_library is None:
+                Molecule.service_library = ChEBI()
             self.new_molecule(args)  # instantiate new molecule
 
     # instantiate existing molecule
@@ -77,7 +79,7 @@ class Molecule:
         self.id = id
 
         # get complete entity of molecule by here ID from bio-service library
-        self.molecule_entity = self.service_library.getCompleteEntity(id)
+        self.molecule_entity = Molecule.service_library.getCompleteEntity(id)
 
         # get molecule 'name'
         self.name = self.molecule_entity.chebiAsciiName
