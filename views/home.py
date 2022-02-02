@@ -33,6 +33,8 @@ class Home:
             st.session_state.selected_comparison_version = 'All'
         if 'selected_comparison_molecule_id' not in st.session_state:
             st.session_state.selected_comparison_molecule_id = ''
+        if 'pagination_start' not in st.session_state:
+            st.session_state.pagination_start = 0
 
         # page sections & settings
         st.set_page_config(layout="wide")
@@ -52,6 +54,7 @@ class Home:
             # application header (Logo + Title)
             with header:
                 self.header()
+                pass
 
             # application statistics (Charts/Graphs)
             with statistics:
@@ -60,10 +63,12 @@ class Home:
             # application sidebar (filters & search)
             with sidebar:
                 self.sidebar()
+                pass
 
             # molecules list
             with molecules_list:
                 self.molecules_list()
+                pass
 
     # Header section
     @staticmethod
@@ -87,10 +92,12 @@ class Home:
         col1, _, col2 = st.columns([50, 1, 49])
         # isomorphism by version
         with col1:
-            self.pie_chart_isomorphism_byVersion()
+            # self.pie_chart_isomorphism_byVersion()
+            pass
         # isomorphism by family
         with col2:
-            self.pie_chart_isomorphism_byFamily()
+            # self.pie_chart_isomorphism_byFamily()
+            pass
 
     # sidebar section
     def sidebar(self):
@@ -101,27 +108,35 @@ class Home:
             # display title
             st.header('Search filters')
 
+            # handler search filters
+            def handler_search_filters():
+                st.session_state.pagination_start = 0
+
             # search molecule by ChEBI ID
             molecules_id_list = [''] + [molecule[0] for molecule in molecules]
             st.session_state.search_molecule_id = st.selectbox(label='Search for a molecule',
                                                                index=0,
-                                                               options=molecules_id_list)
+                                                               options=molecules_id_list,
+                                                               on_change=handler_search_filters)
 
             # select family section
             st.session_state.selected_family = st.selectbox(label='Select molecules family',
                                                             index=0,
-                                                            options=families)
+                                                            options=families,
+                                                            on_change=handler_search_filters)
 
             # select molecules types (single/double/triple link)
             st.session_state.selected_molecule_type = st.selectbox(label='Select molecules links type',
                                                                    index=0,
-                                                                   options=molecules_type)
+                                                                   options=molecules_type,
+                                                                   on_change=handler_search_filters)
 
             # search molecules by name
             molecules_names = [''] + [molecule[2] for molecule in molecules]
             st.session_state.selected_molecule_name = st.selectbox(label='Search molecule by name',
                                                                    index=0,
-                                                                   options=molecules_names)
+                                                                   options=molecules_names,
+                                                                   on_change=handler_search_filters)
             if st.session_state.selected_molecule_name != '':
                 for molecule in molecules:
                     if molecule[2] == st.session_state.selected_molecule_name:
@@ -132,7 +147,8 @@ class Home:
             molecules_formula = [''] + [molecule[3] for molecule in molecules]
             st.session_state.selected_molecule_formula = st.selectbox(label='Search molecule by formula',
                                                                       index=0,
-                                                                      options=molecules_formula)
+                                                                      options=molecules_formula,
+                                                                      on_change=handler_search_filters)
             if st.session_state.selected_molecule_formula != '':
                 for molecule in molecules:
                     if molecule[3] == st.session_state.selected_molecule_formula:
@@ -294,16 +310,52 @@ class Home:
         # display molecules list
         if molecules is not None:
 
+            # pagination step
+            pagination_max = 50
+            if st.session_state.pagination_start + pagination_max > len(molecules):
+                pagination_end = len(molecules)
+            else:
+                pagination_end = st.session_state.pagination_start + pagination_max
+            molecules_pagination = molecules[st.session_state.pagination_start:pagination_end]
+
             # display title
             st.subheader('Molecules list')
             st.caption(f' {len(molecules)} selected molecules')
+            st.caption(f' {st.session_state.pagination_start}-{pagination_end}/{len(molecules)} displayed molecules')
 
             # display list of molecules (ChEBI IDs)
             count = 1
-            for molecule_id in molecules:
+            for molecule_id in molecules_pagination:
                 with st.expander(molecule_id):
                     self.molecule_expanded(molecule_id, count)  # display expanded molecule item
                     count += 1
+
+            # display pagination buttons
+            col1, _, col2 = st.columns([10, 80, 10])
+
+            # back button
+            with col1:
+                # handler function
+                def back_pagination_handler():
+                    st.session_state.pagination_start -= pagination_max
+
+                # display back pagination button
+                disabled = False
+                if st.session_state.pagination_start == 0:
+                    disabled = True
+                st.button(key=100000, label='← back', on_click=back_pagination_handler, disabled=disabled)
+
+            # next button
+            with col2:
+                # handler function
+                def next_pagination_handler():
+                    st.session_state.pagination_start += pagination_max
+
+                # display next pagination button
+                disabled = False
+                if pagination_end >= len(molecules):
+                    disabled = True
+                st.button(key=100001, label='next →', on_click=next_pagination_handler, disabled=disabled)
 
     # molecule expanded item section
     @staticmethod
@@ -344,6 +396,8 @@ class Home:
         # init database connexion
         database_service = Database()
 
+        print('GET DATA . . .')
+
         # get molecules IDs
         return database_service.get_molecules_ids()
 
@@ -351,6 +405,7 @@ class Home:
     def get_filtered_molecules_list(self):
         # get all molecules IDs
         molecules = self.get_data()
+
         molecules_filtered = []
         if molecules is not None:
             # filter list by molecule family

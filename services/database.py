@@ -201,16 +201,19 @@ class Database:
         # prepare statement
         cursor = self.connexion.cursor()
         statement_1 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi"
+                      "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi " \
+                      "and m1.canonical_form1 != NULL"
 
         statement_2 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
                       "WHERE m1.canonical_form2 = m2.canonical_form2 " \
                       "and m1.colored_atoms_number = m2.colored_atoms_number " \
                       "and m1.colored_links_number = m2.colored_links_number " \
-                      "and m1.id_chebi != m2.id_chebi"
+                      "and m1.id_chebi != m2.id_chebi " \
+                      "and m1.canonical_form1 != NULL"
 
         statement_3 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi"
+                      "WHERE m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi " \
+                      "and m1.canonical_form != NULL"
 
         # execute statement & fetch information
         cursor.execute(statement_1)
@@ -288,21 +291,18 @@ class Database:
 
     # get all molecules IDs with families
     def get_molecules_ids(self):
-        molecules = []
         cursor = self.connexion.cursor()
         cursor.execute("SELECT id_chebi, family, name, formula, maximum_link FROM molecules")
         result_set = cursor.fetchall()
-        for row in result_set:
-            molecules.append(row)
-
-        return molecules
+        return [row for row in result_set]
 
     # get single molecule data by ID
     def get_single_molecule(self, molecule_id):
         cursor = self.connexion.cursor()
         cursor.execute(f"SELECT * FROM molecules WHERE id_chebi = '{molecule_id}'")
+        data = cursor.fetchall()
 
-        return Molecule(cursor.fetchall()[0])
+        return Molecule(data[0])
 
     # get molecules isomorphism
     def get_molecules_isomorphism(self, molecule_id, comparison_type, comparison_version):
@@ -312,4 +312,3 @@ class Database:
 
         else:  # get all molecules isomorphism in the same molecular family
             return self.get_molecules_isomorphism_withFamily(molecule_id, comparison_version)
-
