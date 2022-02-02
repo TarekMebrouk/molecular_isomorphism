@@ -33,10 +33,7 @@ class Molecule:
         self.canonical_form1 = None
         self.canonical_form2 = None
         self.canonical_form3 = None
-        self.canonical_label1 = None
-        self.canonical_label2 = None
-        self.canonical_label3 = None
-        self.time = None
+        self.canonical_form4 = None
 
         # check type of constructor
         if isinstance(args, tuple):
@@ -67,10 +64,7 @@ class Molecule:
         self.canonical_form1 = self.convert_canonical_form(args[15])
         self.canonical_form2 = self.convert_canonical_form(args[16])
         self.canonical_form3 = self.convert_canonical_form(args[17])
-        self.canonical_label1 = self.convert_canonical_label(args[18])
-        self.canonical_label2 = self.convert_canonical_label(args[19])
-        self.canonical_label3 = self.convert_canonical_label(args[20])
-        self.time = args[21]
+        self.canonical_form4 = self.convert_canonical_form(args[18])
 
     # parse & extract new molecule information
     def new_molecule(self, id):
@@ -592,27 +586,6 @@ class Molecule:
             for canonic in list:
                 canonical_form.append(float(canonic))
         return canonical_form
-
-    # convert SQL TEXT to canonicals form list
-    @staticmethod
-    def convert_canonical_label(data):
-        canonical_label = []
-        if data is not None:
-            list = data.split('|')
-            for label in list:
-                canonical_label.append(int(label))
-        return canonical_label
-
-    # compare canonical forms
-    def compare(self, molecule, version=1):
-        if version == 1:  # compare canonical form 1
-            return self.canonical_form1 == molecule.canonical_form1
-
-        if version == 2:  # compare canonical form 2
-            return self.canonical_form2 == molecule.canonical_form2
-
-        if version == 3:  # compare canonical form 3
-            return self.canonical_form3 == molecule.canonical_form3
 
     # display molecule
     def display(self):

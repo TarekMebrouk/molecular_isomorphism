@@ -149,22 +149,28 @@ class Database:
     def get_molecules_isomorphism_withAll(self, molecule_id, version=1):
         # prepare statement
         cursor = self.connexion.cursor()
-        statement = "SELECT m2.id_chebi from molecules m1, molecules m2 WHERE "
+        statement = "SELECT m2.id_chebi from molecules m1 where "
 
         # check of comparison version
         if version == 1:  # compare canonical form 1
-            statement += "m1.canonical_form1 = m2.canonical_form1 "
+            statement += "m1.canonical_form1 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form1 = m2.canonical_form1 " \
+                         "and m1.id_chebi != m2.id_chebi"
 
         if version == 2:  # compare canonical form 2
-            statement += "m1.canonical_form2 = m2.canonical_form2 " \
-                         "and m1.colored_atoms_number = m2.colored_atoms_number " \
-                         "and m1.colored_links_number = m2.colored_links_number "
+            statement += "m1.canonical_form2 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form2 = m2.canonical_form2 " \
+                         "and m1.id_chebi != m2.id_chebi and and m1.links_number = m2.links_number " \
+                         "and m1.atoms_number = m2.atoms_number and m1.formula = m2.formula"
 
         if version == 3:  # compare canonical form 3
-            statement += "m1.canonical_form3 = m2.canonical_form3 "
+            statement += "m1.canonical_form3 = (select m2.canonical_form3 from molecules m2 where m1.canonical_form3 = m2.canonical_form3 " \
+                         "and m1.id_chebi != m2.id_chebi"
+
+        if version == 4:  # compare canonical form 4
+            statement += "m1.canonical_form4 = (select m2.canonical_form4 from molecules m2 where m1.canonical_form4 = m2.canonical_form4 " \
+                         "and m1.id_chebi != m2.id_chebi"
 
         # execute statement & fetch information
-        statement += f"and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}'"
+        statement += f"and m1.id_chebi = '{molecule_id}')"
         cursor.execute(statement)
         result_set = cursor.fetchall()
 
@@ -174,23 +180,28 @@ class Database:
     def get_molecules_isomorphism_withFamily(self, molecule_id, version=1):
         # prepare statement
         cursor = self.connexion.cursor()
-        statement = "SELECT m2.id_chebi from molecules m1, molecules m2 WHERE " \
-                    f"m1.family = m2.family and "
+        statement = "SELECT m2.id_chebi from molecules m1 where "
 
         # check of comparison version
         if version == 1:  # compare canonical form 1
-            statement += "m1.canonical_form1 = m2.canonical_form1 "
+            statement += "m1.canonical_form1 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form1 = m2.canonical_form1 " \
+                         "and m1.id_chebi != m2.id_chebi"
 
         if version == 2:  # compare canonical form 2
-            statement += "m1.canonical_form2 = m2.canonical_form2 " \
-                         "and m1.colored_atoms_number = m2.colored_atoms_number " \
-                         "and m1.colored_links_number = m2.colored_links_number "
+            statement += "m1.canonical_form2 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form2 = m2.canonical_form2 " \
+                         "and m1.id_chebi != m2.id_chebi and and m1.links_number = m2.links_number " \
+                         "and m1.atoms_number = m2.atoms_number and m1.formula = m2.formula"
 
         if version == 3:  # compare canonical form 3
-            statement += "m1.canonical_form3 = m2.canonical_form3 "
+            statement += "m1.canonical_form3 = (select m2.canonical_form3 from molecules m2 where m1.canonical_form3 = m2.canonical_form3 " \
+                         "and m1.id_chebi != m2.id_chebi"
+
+        if version == 4:  # compare canonical form 4
+            statement += "m1.canonical_form4 = (select m2.canonical_form4 from molecules m2 where m1.canonical_form4 = m2.canonical_form4 " \
+                         "and m1.id_chebi != m2.id_chebi"
 
         # execute statement & fetch information
-        statement += f"and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}'"
+        statement += f"and m1.id_chebi = '{molecule_id}' and m1.family = m2.family)"
         cursor.execute(statement)
         result_set = cursor.fetchall()
 
@@ -200,32 +211,32 @@ class Database:
     def get_count_isomorphism_byVersion(self):
         # prepare statement
         cursor = self.connexion.cursor()
-        statement_1 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi " \
-                      "and m1.canonical_form1 != NULL"
+        statement_1 = "select sum(f) from (SELECT count(*) as f, canonical_form1 from molecules " \
+                      "group by canonical_form1 HAVING count(*) > 1) as t"
 
-        statement_2 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form2 = m2.canonical_form2 " \
-                      "and m1.colored_atoms_number = m2.colored_atoms_number " \
-                      "and m1.colored_links_number = m2.colored_links_number " \
-                      "and m1.id_chebi != m2.id_chebi " \
-                      "and m1.canonical_form1 != NULL"
+        statement_2 = "select sum(f) from (SELECT count(*) as f, canonical_form2 from molecules " \
+                      "group by canonical_form2,atoms_number,links_number, formula HAVING count(*) > 1) as t"
 
-        statement_3 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi " \
-                      "and m1.canonical_form != NULL"
+        statement_3 = "select sum(f) from (SELECT count(*) as f, canonical_form3 from molecules " \
+                      "group by canonical_form3 HAVING count(*) > 1) as t"
+
+        statement_4 = "select sum(f) from (SELECT count(*) as f, canonical_form4 from molecules " \
+                      "group by canonical_form4 HAVING count(*) > 1) as t"
 
         # execute statement & fetch information
         cursor.execute(statement_1)
-        count_1 = int(cursor.fetchall()[0][0]) / 2
+        count_1 = int(cursor.fetchall()[0][0])
 
         cursor.execute(statement_2)
-        count_2 = int(cursor.fetchall()[0][0]) / 2
+        count_2 = int(cursor.fetchall()[0][0])
 
         cursor.execute(statement_3)
-        count_3 = int(cursor.fetchall()[0][0]) / 2
+        count_3 = int(cursor.fetchall()[0][0])
 
-        return int(count_1), int(count_2), int(count_3)
+        cursor.execute(statement_4)
+        count_4 = int(cursor.fetchall()[0][0])
+
+        return count_1, count_2, count_3, count_4
 
     # count molecules inside each molecular family
     def get_count_family(self):
@@ -245,47 +256,93 @@ class Database:
     def get_count_isomorphism_byId(self, molecule_id):
         # prepare statement
         cursor = self.connexion.cursor()
-        statement_1 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi " \
-                      f"and m1.id_chebi = '{molecule_id}'"
+        statement_1 = "select sum(f) from (SELECT count(*) as f, canonical_form1 from molecules " \
+                      "group by canonical_form1 HAVING count(*) > 1) as t " \
+                      f"where canonical_form1 = (SELECT canonical_form1 from molecules WHERE id_chebi='{molecule_id}')"
 
-        statement_2 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form2 = m2.canonical_form2 " \
-                      "and m1.colored_atoms_number = m2.colored_atoms_number " \
-                      "and m1.colored_links_number = m2.colored_links_number " \
-                      "and m1.id_chebi != m2.id_chebi " \
-                      f"and m1.id_chebi = '{molecule_id}'"
+        statement_2 = "select sum(f) from (SELECT count(*) as f, canonical_form2 from molecules " \
+                      "group by canonical_form2,atoms_number,links_number, formula HAVING count(*) > 1) as t " \
+                      f"where canonical_form2 = (SELECT canonical_form2 from molecules WHERE id_chebi='{molecule_id}')"
 
-        statement_3 = "SELECT count(m1.id_chebi) from molecules m1, molecules m2 " \
-                      "WHERE m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi " \
-                      f"and m1.id_chebi = '{molecule_id}'"
+        statement_3 = "select sum(f) from (SELECT count(*) as f, canonical_form3 from molecules " \
+                      "group by canonical_form3 HAVING count(*) > 1) as t " \
+                      f"where canonical_form3 = (SELECT canonical_form3 from molecules WHERE id_chebi='{molecule_id}')"
+
+        statement_4 = "select sum(f) from (SELECT count(*) as f, canonical_form4 from molecules " \
+                      "group by canonical_form4 HAVING count(*) > 1) as t " \
+                      f"where canonical_form4 = (SELECT canonical_form4 from molecules WHERE id_chebi='{molecule_id}')"
 
         # execute statement & fetch information
         cursor.execute(statement_1)
-        count_1 = int(cursor.fetchall()[0][0])
+        value = cursor.fetchall()[0][0]
+        if value is not None:
+            count_1 = int(value)
+        else:
+            count_1 = 0
 
         cursor.execute(statement_2)
-        count_2 = int(cursor.fetchall()[0][0])
+        value = cursor.fetchall()[0][0]
+        if value is not None:
+            count_2 = int(value)
+        else:
+            count_2 = 0
 
         cursor.execute(statement_3)
-        count_3 = int(cursor.fetchall()[0][0])
+        value = cursor.fetchall()[0][0]
+        if value is not None:
+            count_3 = int(value)
+        else:
+            count_3 = 0
 
-        return count_1 + count_2 + count_3
+        cursor.execute(statement_4)
+        value = cursor.fetchall()[0][0]
+        if value is not None:
+            count_4 = int(value)
+        else:
+            count_4 = 0
+
+        return count_1 + count_2 + count_3 + count_4
 
     # count isomorphism by family
     def get_count_isomorphism_byFamily(self):
         cursor = self.connexion.cursor()
 
+        statement_1 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
+                      "group by canonical_form1 HAVING count(*) > 1) as t group by family"
+
+        statement_2 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
+                      "group by canonical_form2,atoms_number,links_number, formula " \
+                      "HAVING count(*) > 1) as t group by family"
+
+        statement_3 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
+                      "group by canonical_form3 HAVING count(*) > 1) as t group by family"
+
+        statement_4 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
+                      "group by canonical_form4 HAVING count(*) > 1) as t group by family"
+
+        # init family
         families = ['Amide', 'Amine', 'Ester', 'Carboxylic acid', 'Ketone', 'Aldehyde', 'Alcohol',
                     'Halogenated compound', 'Aromatic compound', 'Alken', 'Alkanes', 'Other']
         family_counter = {}
-
         for family in families:
-            cursor.execute("SELECT count(m1.id_chebi) from molecules m1, molecules m2 "
-                           "WHERE m1.canonical_form1 = m2.canonical_form1 or m1.canonical_form2 = m2.canonical_form2 "
-                           "or m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi "
-                           f"and m1.family = m2.family and m1.family = '{family}'")
-            family_counter[family] = int(cursor.fetchall()[0][0])
+            family_counter[family] = 0
+
+        # execute statement & fetch information
+        cursor.execute(statement_1)
+        for family in cursor.fetchall():
+            family_counter[family[0]] += int(family[1])
+
+        cursor.execute(statement_2)
+        for family in cursor.fetchall():
+            family_counter[family[0]] += int(family[1])
+
+        cursor.execute(statement_3)
+        for family in cursor.fetchall():
+            family_counter[family[0]] += int(family[1])
+
+        cursor.execute(statement_4)
+        for family in cursor.fetchall():
+            family_counter[family[0]] += int(family[1])
 
         return family_counter
 

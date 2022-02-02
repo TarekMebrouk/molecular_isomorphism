@@ -6,7 +6,7 @@ import streamlit as st
 families = ['All', 'Amide', 'Amine', 'Ester', 'Carboxylic acid', 'Ketone', 'Aldehyde', 'Alcohol', 'Halogenated compound', 'Aromatic compound', 'Alken', 'Alkanes', 'Other']
 molecules_type = ['All', 'single', 'double', 'triple']
 comparison_type = ['All', 'Family']
-comparison_version = ['Version 1', 'Version 2', 'Version 3']
+comparison_version = ['Version 1', 'Version 2', 'Version 3', 'version 4']
 
 
 class Home:
@@ -35,6 +35,8 @@ class Home:
             st.session_state.selected_comparison_molecule_id = ''
         if 'pagination_start' not in st.session_state:
             st.session_state.pagination_start = 0
+        if 'statistics_state' not in st.session_state:
+            st.session_state.statistics_state = False
 
         # page sections & settings
         st.set_page_config(layout="wide")
@@ -83,21 +85,29 @@ class Home:
     def statistics(self):
 
         # display families statistics
-        st.subheader('Families statistics')
-        self.bar_chart_families_count()
-
-        # display isomorphism statistics
-        st.subheader('Isomorphism statistics')
-
-        col1, _, col2 = st.columns([50, 1, 49])
-        # isomorphism by version
+        col1, _, col2 = st.columns([90, 5, 5])
         with col1:
-            # self.pie_chart_isomorphism_byVersion()
-            pass
-        # isomorphism by family
+            st.subheader('Statistics')
         with col2:
-            # self.pie_chart_isomorphism_byFamily()
-            pass
+            st.write('')
+            st.session_state.statistics_state = st.checkbox('')
+
+        # if statistics section is activated
+        if st.session_state.statistics_state:
+
+            st.subheader('Families statistics')
+            self.bar_chart_families_count()
+
+            # display isomorphism statistics
+            st.subheader('Isomorphism statistics')
+
+            col1, _, col2 = st.columns([50, 1, 49])
+            # isomorphism by version
+            with col1:
+                self.pie_chart_isomorphism_byVersion()
+            # isomorphism by family
+            with col2:
+                self.pie_chart_isomorphism_byFamily()
 
     # sidebar section
     def sidebar(self):
@@ -174,6 +184,7 @@ class Home:
 
         # handler function
         def back_handler():
+            st.session_state.statistics_state = False
             st.session_state.selected_molecule_id = ''
 
         # display return button
@@ -396,8 +407,6 @@ class Home:
         # init database connexion
         database_service = Database()
 
-        print('GET DATA . . .')
-
         # get molecules IDs
         return database_service.get_molecules_ids()
 
@@ -430,18 +439,18 @@ class Home:
     @staticmethod
     def pie_chart_isomorphism_byVersion():
         # get count isomorphism by version
-        version_1, version_2, version_3 = Database().get_count_isomorphism_byVersion()
+        version_1, version_2, version_3, version_4 = Database().get_count_isomorphism_byVersion()
 
         # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-        labels = 'Simple', 'Atom colored', 'Link colored'
-        total = version_1 + version_2 + version_3
+        labels = 'Simple', 'Atom colored', 'Link colored', 'advanced'
+        total = version_1 + version_2 + version_3 + version_4
         st.markdown(f'**Total isomorphism : ** {total}')
         if total != 0:
-            sizes = [version_1 * 100 / total, version_2 * 100 / total, version_3 * 100 / total]
-            explode = (0.1, 0, 0)
+            sizes = [version_1 * 100 / total, version_2 * 100 / total, version_3 * 100 / total, version_4 * 100 / total]
+            explode = (0.1, 0, 0, 0)
 
             fig1, ax1 = plt.subplots()
-            ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True, startangle=90)
+            ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', startangle=90)
             ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
 
             st.pyplot(fig1)
@@ -451,6 +460,7 @@ class Home:
     def bar_chart_families_count():
         # get families molecules count
         family_dict = Database().get_count_family()
+
         st.caption(f'**Total molecules : ** {sum(list(family_dict.values()))}')
 
         fig = plt.figure(figsize=(10, 5))
@@ -472,9 +482,12 @@ class Home:
         st.markdown('')
         if total != 0:
             sizes = list(family_dict.values())
+            fig, ax = plt.subplots(figsize=(10, 5), subplot_kw=dict(aspect="equal"))
 
-            fig1, ax1 = plt.subplots()
-            ax1.pie(sizes, labels=labels, autopct='%1.1f%%', shadow=True, startangle=90)
-            ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+            data, auto_texts = ax.pie(sizes, textprops=dict(color="w"))
+            ax.legend(data, labels,
+                      title="Families",
+                      loc="center left",
+                      bbox_to_anchor=(1, 0, 0.5, 1))
 
-            st.pyplot(fig1)
+            st.pyplot(fig)
