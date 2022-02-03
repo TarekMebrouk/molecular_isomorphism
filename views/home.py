@@ -65,12 +65,10 @@ class Home:
             # application sidebar (filters & search)
             with sidebar:
                 self.sidebar()
-                pass
 
             # molecules list
             with molecules_list:
                 self.molecules_list()
-                pass
 
     # Header section
     @staticmethod
@@ -123,11 +121,12 @@ class Home:
                 st.session_state.pagination_start = 0
 
             # search molecule by ChEBI ID
-            molecules_id_list = [''] + [molecule[0] for molecule in molecules]
-            st.session_state.search_molecule_id = st.selectbox(label='Search for a molecule',
-                                                               index=0,
-                                                               options=molecules_id_list,
-                                                               on_change=handler_search_filters)
+            value = st.text_input('Search for a molecule', '')
+            if value != '' and value in [molecule[0] for molecule in molecules]:
+                st.session_state.search_molecule_id = value
+                handler_search_filters()
+            else:
+                st.session_state.search_molecule_id = ''
 
             # select family section
             st.session_state.selected_family = st.selectbox(label='Select molecules family',
@@ -377,21 +376,17 @@ class Home:
         database_service = Database()
         molecule = database_service.get_single_molecule(molecule_id)
 
-        # get count of molecule isomorphism with molecule_id
-        isomorphism_count = database_service.get_count_isomorphism_byId(molecule_id)
-
         # left side : display molecule data
         with col1:
             st.markdown(f'**Name** : {molecule.name}')
             st.markdown(f'**Formula** : {molecule.formula}')
             st.markdown(f'**Family** : {molecule.family}')
-            st.markdown(f'**Link type** : {molecule.maximum_link}')
 
         # middle side : display molecule data
         with col2:
+            st.markdown(f'**Link type** : {molecule.maximum_link}')
             st.markdown(f'**Atoms count** : {molecule.atoms_number}')
             st.markdown(f'**Links count** : {molecule.links_number}')
-            st.markdown(f'**Isomorphism count** : {isomorphism_count}')
 
         # handler function
         def next_handler():
@@ -402,8 +397,8 @@ class Home:
             st.button(key=100 + index, label='more details', on_click=next_handler)
 
     # get all molecules IDs
-    @st.cache
-    def get_data(self):
+    @staticmethod
+    def get_data():
         # init database connexion
         database_service = Database()
 
@@ -440,13 +435,14 @@ class Home:
     def pie_chart_isomorphism_byVersion():
         # get count isomorphism by version
         version_1, version_2, version_3, version_4 = Database().get_count_isomorphism_byVersion()
+        print(f'\n\nVersion statistics : v1={version_1}, v2={version_2}, v3={version_3}, v4={version_4}')
 
         # Pie chart, where the slices will be ordered and plotted counter-clockwise:
         labels = 'Simple', 'Atom colored', 'Link colored', 'advanced'
-        total = version_1 + version_2 + version_3 + version_4
-        st.markdown(f'**Total isomorphism : ** {total}')
+        total = (version_1 + version_2 + version_3 + version_4) / 4
+        st.markdown(f'**Total isomorphism : ** {int(total)}')
         if total != 0:
-            sizes = [version_1 * 100 / total, version_2 * 100 / total, version_3 * 100 / total, version_4 * 100 / total]
+            sizes = [version_1, version_2, version_3, version_4]
             explode = (0.1, 0, 0, 0)
 
             fig1, ax1 = plt.subplots()
@@ -475,6 +471,7 @@ class Home:
     def pie_chart_isomorphism_byFamily():
         # get count isomorphism by family
         family_dict = Database().get_count_isomorphism_byFamily()
+        print(f'\n\nFamily statistics : {family_dict}')
 
         # Pie chart, where the slices will be ordered and plotted counter-clockwise:
         labels = list(family_dict.keys())

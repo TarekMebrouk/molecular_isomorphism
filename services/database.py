@@ -149,29 +149,24 @@ class Database:
     def get_molecules_isomorphism_withAll(self, molecule_id, version=1):
         # prepare statement
         cursor = self.connexion.cursor()
-        statement = "SELECT m2.id_chebi from molecules m1 where "
+        statement = "SELECT m1.id_chebi from molecules m1 where "
 
         # check of comparison version
+        # check of comparison version
         if version == 1:  # compare canonical form 1
-            statement += "m1.canonical_form1 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form1 = m2.canonical_form1 " \
-                         "and m1.id_chebi != m2.id_chebi"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
         if version == 2:  # compare canonical form 2
-            statement += "m1.canonical_form2 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form2 = m2.canonical_form2 " \
-                         "and m1.id_chebi != m2.id_chebi and and m1.links_number = m2.links_number " \
-                         "and m1.atoms_number = m2.atoms_number and m1.formula = m2.formula"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form2 = m2.canonical_form2 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
         if version == 3:  # compare canonical form 3
-            statement += "m1.canonical_form3 = (select m2.canonical_form3 from molecules m2 where m1.canonical_form3 = m2.canonical_form3 " \
-                         "and m1.id_chebi != m2.id_chebi"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
         if version == 4:  # compare canonical form 4
-            statement += "m1.canonical_form4 = (select m2.canonical_form4 from molecules m2 where m1.canonical_form4 = m2.canonical_form4 " \
-                         "and m1.id_chebi != m2.id_chebi"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form4 = m2.canonical_form4 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
-        # execute statement & fetch information
-        statement += f"and m1.id_chebi = '{molecule_id}')"
         cursor.execute(statement)
+        # print(statement)
         result_set = cursor.fetchall()
 
         return [row[0] for row in result_set]
@@ -180,28 +175,23 @@ class Database:
     def get_molecules_isomorphism_withFamily(self, molecule_id, version=1):
         # prepare statement
         cursor = self.connexion.cursor()
-        statement = "SELECT m2.id_chebi from molecules m1 where "
+        statement = ""
 
         # check of comparison version
         if version == 1:  # compare canonical form 1
-            statement += "m1.canonical_form1 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form1 = m2.canonical_form1 " \
-                         "and m1.id_chebi != m2.id_chebi"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form1 = m2.canonical_form1 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
         if version == 2:  # compare canonical form 2
-            statement += "m1.canonical_form2 = (select m2.canonical_form1 from molecules m2 where m1.canonical_form2 = m2.canonical_form2 " \
-                         "and m1.id_chebi != m2.id_chebi and and m1.links_number = m2.links_number " \
-                         "and m1.atoms_number = m2.atoms_number and m1.formula = m2.formula"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form2 = m2.canonical_form2 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
         if version == 3:  # compare canonical form 3
-            statement += "m1.canonical_form3 = (select m2.canonical_form3 from molecules m2 where m1.canonical_form3 = m2.canonical_form3 " \
-                         "and m1.id_chebi != m2.id_chebi"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form3 = m2.canonical_form3 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
         if version == 4:  # compare canonical form 4
-            statement += "m1.canonical_form4 = (select m2.canonical_form4 from molecules m2 where m1.canonical_form4 = m2.canonical_form4 " \
-                         "and m1.id_chebi != m2.id_chebi"
+            statement = f"SELECT m2.id_chebi from molecules m1 , molecules m2 where m1.canonical_form4 = m2.canonical_form4 and m1.id_chebi != m2.id_chebi and m1.id_chebi = '{molecule_id}' "
 
         # execute statement & fetch information
-        statement += f"and m1.id_chebi = '{molecule_id}' and m1.family = m2.family)"
+        statement += f" and m1.family = m2.family"
         cursor.execute(statement)
         result_set = cursor.fetchall()
 
@@ -274,6 +264,7 @@ class Database:
 
         # execute statement & fetch information
         cursor.execute(statement_1)
+        print(statement_1)
         value = cursor.fetchall()[0][0]
         if value is not None:
             count_1 = int(value)
@@ -308,17 +299,17 @@ class Database:
         cursor = self.connexion.cursor()
 
         statement_1 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
-                      "group by canonical_form1 HAVING count(*) > 1) as t group by family"
+                      "group by family, canonical_form1 HAVING count(*) > 1) as t group by family"
 
         statement_2 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
-                      "group by canonical_form2,atoms_number,links_number, formula " \
+                      "group by family, canonical_form2,atoms_number,links_number, formula " \
                       "HAVING count(*) > 1) as t group by family"
 
         statement_3 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
-                      "group by canonical_form3 HAVING count(*) > 1) as t group by family"
+                      "group by family,  canonical_form3 HAVING count(*) > 1) as t group by family"
 
         statement_4 = "select family, sum(tt) from (select family, count(*) as tt from molecules " \
-                      "group by canonical_form4 HAVING count(*) > 1) as t group by family"
+                      "group by family, canonical_form4 HAVING count(*) > 1) as t group by family"
 
         # init family
         families = ['Amide', 'Amine', 'Ester', 'Carboxylic acid', 'Ketone', 'Aldehyde', 'Alcohol',
